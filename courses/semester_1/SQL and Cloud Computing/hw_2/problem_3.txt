@@ -1,0 +1,573 @@
+Problem 3:
+------------------------------
+
+(a) Adapt the WordCount.java example to parse the TSV format of the name.basics.tsv and title.basics.tsv files from IMDB. Notice that in Java, an input string can easily be split on the backslashed tab character via split("\t").
+
+# Step 1: adapt the WordCount.java code to handle TSV files by changing the delimiter
+
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCountTSV {
+
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+		private final static IntWritable one = new IntWritable(1);
+		private Text word = new Text();
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String line = value.toString();
+			String[] tokens = line.split("\t"); // This is the change that was needed 
+			for (String token : tokens) {
+				word.set(token);
+				context.write(word, one);
+			}
+		}
+	}
+
+	public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+		private IntWritable result = new IntWritable();
+
+		@Override
+		public void reduce(Text key, Iterable<IntWritable> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCountTSV");
+		job.setJar("WordCountTSV.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		// job.setCombinerClass(IntSumReducer.class); // enable to use 'local aggregation'
+		job.setReducerClass(IntSumReducer.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+
+# Step 2: Copy the code and the files to the IRIS cluster by running the commands below on the local machine inside the folder containing these files
+
+scp -P 8022 WordCountTSV.java <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 name.basics.tsv <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 title.basics.tsv <yourlogin>@access-iris.uni.lu:~/
+
+# Step 3: Connect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si 
+
+# Step 4: Export environment variables (we assume you have Java and Hadoop loaded)
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# Step 5: Java Compilation
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar WordCountTSV.java
+jar -cvf WordCountTSV.jar *.class
+
+# Step 6: Move our TSV files in a same folder
+
+mkdir tsv-files
+mv *.tsv tsv-files
+
+# Step 7: Run the WordCountTSV in Hadoop using the TSV input files 
+
+hadoop jar WordCountTSV.jar WordCountTSV ~/tsv-files ~/hadoop-output-directory
+
+# Step 8: Inspect the output 
+
+cat ~/hadoop-output-directory/part-r-*
+
+# Step 9: Exit the interactive shell 
+
+exit
+
+# Step 10: Exit the server
+
+exit
+
+
+
+------------------------------
+------------------------------
+
+(b) Deploy your WordCount.java algorithms with the new tokenizers on the IRIS HPC cluster in order to count the frequencies of all actors’ names and movies’ titles in IMDB, respectively. Report the 10 most frequent such (duplicate) names and titles.
+
+# Step 1: Adjust the java code to accomodate the name.basics.tsv file and name it WordCountActors.java (comments explain the changes made to the file)
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCountActors {
+
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+		private final static IntWritable one = new IntWritable(1);
+		private Text word = new Text();
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String line = value.toString();
+			String[] tokens = line.split("\t");
+            // We create an ArrayList that will only hold the name of the actors without the other pieces of data received from the file
+            ArrayList<String> newTokens = new ArrayList<>();
+            // We loop through the tokens and take only the ones from the 2nd column (index 1) which represent the name 
+            for (int i = 1; i < tokens.length; i += 6) {
+                // We filter on records that are actors or actresses
+                if(tokens[i+3].contains("actor") || tokens[i+3].contains("actress")) {
+                    // We add a coma at the end of the name because some names contain numbers that are confused as a count for Unix if we only use space as a separator 
+					String fromattedToken = tokens[i] + ",";
+                    newTokens.add(fromattedToken);
+                }
+            }
+			for (String token : newTokens) {
+				word.set(token);
+				context.write(word, one);
+			}
+		}
+	}
+
+	public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+		private IntWritable result = new IntWritable();
+
+		@Override
+		public void reduce(Text key, Iterable<IntWritable> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCountActors");
+		job.setJar("WordCountActors.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		job.setCombinerClass(IntSumReducer.class);
+		job.setReducerClass(IntSumReducer.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+
+# Step 2: We copy the java file into IRIS
+
+scp -P 8022 WordCountActors.java <yourlogin>@access-iris.uni.lu:~/
+
+# Step 3: Connect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si 
+
+# Step 4: Export environment variables (we assume you have Java and Hadoop loaded and Java is exported from previous exercise) 
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# Step 5: Java Compilation
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar WordCountActors.java
+jar -cvf WordCountActors.jar *.class
+
+# Step 6: Run the WordCountActors in Hadoop using the name.basics.tsv file as input, change the output folder name not to clash with the previous one
+
+hadoop jar WordCountActors.jar WordCountActors ~/tsv-files/name.basics.tsv ~/hadoop-output-directory-actors
+
+# Step 7: Check the Output
+
+sort -t',' -k2 -rn hadoop-output-directory-actors/part-r-* | head -n 10
+
+# Step 8: The outpout is as below, you can check the output also on the screenshot problem_3_b_1 added to this submited folder 
+
+Alex,   188
+Anna,   151
+Angel,  135
+Sabrina,        133
+Max,    128
+Maria,  127
+David,  122
+Sam,    121
+Mike,   121
+Nicole, 120
+
+# Step 9: Exit the interactive shell 
+
+exit
+
+# Step 10: Exit the server
+
+exit
+
+# Step 11: Adjust the java code to accomodate the title.basics.tsv file and name it WordCountMovies.java (comments explain the changes made to the file)
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCountMovies {
+
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+		private final static IntWritable one = new IntWritable(1);
+		private Text word = new Text();
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String line = value.toString();
+			String[] tokens = line.split("\t");
+            // We create an ArrayList that will only hold the titles of the movies without the other pieces of data received from the file
+            ArrayList<String> newTokens = new ArrayList<>();
+            // We loop through the tokens and take only the ones from the 3nd column (index 2) which represent the titles
+            for (int i = 2; i < tokens.length; i += 9) {
+                // We add a tab at the end of the titles because some titles contain numbers and commas and spaces that are confusing to count for Unix if we only the default space or a comma as a separator 
+                String fromattedToken = tokens[i] + "\t";
+                newTokens.add(fromattedToken);
+            }
+			for (String token : newTokens) {
+				word.set(token);
+				context.write(word, one);
+			}
+		}
+	}
+
+	public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+		private IntWritable result = new IntWritable();
+
+		@Override
+		public void reduce(Text key, Iterable<IntWritable> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCountMovies");
+		job.setJar("WordCountMovies.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		job.setCombinerClass(IntSumReducer.class);
+		job.setReducerClass(IntSumReducer.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+
+# Step 12: We copy the java file into IRIS
+
+scp -P 8022 WordCountMovies.java <yourlogin>@access-iris.uni.lu:~/
+
+# Step 13: Reconnect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si 
+
+# Step 14: Export environment variables (we assume you have Java and Hadoop loaded and Java is exported from previous exercise) 
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# Step 5: Java Compilation
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar WordCountMovies.java
+jar -cvf WordCountMovies.jar *.class
+
+# Step 6: Run the WordCountMovies in Hadoop using the title.basics.tsv file as input, change the output folder name not to clash with the previous hadoop output folders
+
+hadoop jar WordCountMovies.jar WordCountMovies ~/tsv-files/title.basics.tsv ~/hadoop-output-directory-movies
+
+# Step 7: Check the Output
+
+sort -t $'\t' -k2 -rn hadoop-output-directory-movies/part-r-* | head -n 10
+
+# Step 8: The outpout is as below, you can check the output also on the screenshot problem_3_b_2 added to this submitted folder
+
+Episode #1.1            49391
+Episode #1.2            44614
+Episode #1.3            42240
+Episode #1.4            39099
+Episode #1.5            35793
+Episode #1.6            33802
+Episode #1.7            29385
+Episode #1.8            28161
+Episode #1.9            24695
+Episode #1.10           23746
+
+# Step 9: Exit the interactive shell 
+
+exit
+
+# Step 10: Exit the server
+
+exit
+
+
+------------------------------
+------------------------------
+
+(c) Finally, assume we wish to find those actors’ names that most frequently occur across all movies. Notice that this information is provided in the title.principals.tsv file, however the actors’ names do not occur in that file. How could you still use the MapReduce infrastructure to combine the information from all the three TSV files?
+
+# Step 1: Create the Java code to take input from both name and principals files and generate an output file with the actor names and their occurences in movies
+
+import java.io.IOException;
+
+import javax.naming.Context;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class ActorCountWithJoin {
+
+    // Step 1: A job that counts the occurrences of actor IDs in the principals file using same logic as WordCount with MR
+    public static class ActorIdCountMapper extends Mapper<Object, Text, Text, IntWritable> {
+        private final static IntWritable one = new IntWritable(1);
+        private Text actorId = new Text();
+
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            String[] parts = value.toString().split("\t");
+            if (parts.length >= 3) {
+                String category = parts[3].trim();
+                if (category.equals("actor") || category.equals("actress")) {
+                    String actorIdStr = parts[2].trim();
+                    actorId.set(actorIdStr);
+                    context.write(actorId, one);
+                }
+            }
+        }
+    }
+
+    public static class ActorCountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
+
+        public void reduce(Text key, Iterable<IntWritable> values, Context context)
+                throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
+
+    // Step 2: Join actor IDs with actor names using another job of MR
+    public static class ActorJoinMapper extends Mapper<Object, Text, Text, Text> {
+        private Text actorId = new Text();
+        private Text actorName = new Text();
+        private Text actorCount = new Text();
+    
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            String[] parts = value.toString().split("\t");
+            // Check if it's the name.basics.tsv file
+            if (parts.length != 2) {
+                String id = parts[0].trim();
+                String name = parts[1].trim();
+                actorId.set(id);
+                // Add '*' prefix to indicate actor name 
+                actorName.set("*" + name);   
+                context.write(actorId, actorName);
+            }
+            // If it's the output of the first reducer we take the count
+            else {
+                String id = parts[0].trim();
+                String count = parts[1].trim();
+                actorId.set(id);
+                // No '*' prefix to separate count from actor name 
+                actorCount.set(count);
+                context.write(actorId, actorCount);
+            }
+        }
+    }
+    
+
+    public static class ActorJoinReducer extends Reducer<Text, Text, Text, Text> {
+        private Text result = new Text();
+    
+        public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            String actorName = null;
+            int count = 0;
+    
+            for (Text val : values) {
+                String valueStr = val.toString();
+                if (valueStr.startsWith("*")) {
+                    // Remove the '*' prefix
+                    actorName = valueStr.substring(1); 
+                } 
+                else {
+                     count += Integer.parseInt(valueStr);
+                }
+            }
+    
+            if (actorName != null) {
+                result.set(actorName + "\t" + count);
+                context.write(key, result);
+            }
+        }
+    }
+    
+
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf1 = new Configuration();
+        Job job1 = Job.getInstance(conf1, "actor count");
+        job1.setJarByClass(ActorCountWithJoin.class);
+        job1.setMapperClass(ActorIdCountMapper.class);
+        job1.setCombinerClass(ActorCountReducer.class);
+        job1.setReducerClass(ActorCountReducer.class);
+        job1.setOutputKeyClass(Text.class);
+        job1.setOutputValueClass(IntWritable.class);
+        FileInputFormat.addInputPath(job1, new Path(args[0])); // Input: title.principals.tsv
+        FileOutputFormat.setOutputPath(job1, new Path(args[2])); // Output: output/actorCount
+
+        if (!job1.waitForCompletion(true)) {
+            System.exit(1);
+        }
+
+        Configuration conf2 = new Configuration();
+        Job job2 = Job.getInstance(conf2, "actor join");
+        job2.setJarByClass(ActorCountWithJoin.class);
+        job2.setMapperClass(ActorJoinMapper.class);
+        job2.setReducerClass(ActorJoinReducer.class);
+        job2.setOutputKeyClass(Text.class);
+        job2.setOutputValueClass(Text.class);
+        FileInputFormat.addInputPaths(job2, args[1] + "," + args[2]); // Input: Output of job1 (output/actorCount) and name.basics.tsv
+        FileOutputFormat.setOutputPath(job2, new Path(args[3])); // Output: output/actorJoin
+        System.exit(job2.waitForCompletion(true) ? 0 : 1);
+    }
+}
+
+# Step 2: We copy the java file into IRIS
+
+scp -P 8022 ActorCountWithJoin.java <yourlogin>@access-iris.uni.lu:~/
+
+# Step 3: Connect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si 
+
+# Step 4: Create a folder to group all input files
+
+mkdir input 
+
+# Step 5: from your local machine, open a new terminal window on the folder containing the input files and copy them to the server using these commands
+
+scp -P 8022 name.basics.tsv <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 title.principals.tsv <yourlogin>@access-iris.uni.lu:~/
+
+# Step 6: Back on the server, export environment variables (we assume you have Java and Hadoop loaded and Java is exported from previous exercise) 
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# Step 7: Java Compilation
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar ActorCountWithJoin.java
+jar -cvf ActorCountWithJoin.jar *.class
+
+# Step 8: Run the ActorCountWithJoin with Hadoop using two input files input/title.principals.tsv and name.basics.tsv as inputs, and using two output folders, one for the first job and one for the second
+
+hadoop jar ActorCountWithJoin.jar ActorCountWithJoin input/title.principals.tsv input/name.basics.tsv output/actorCount output/actorJoin
+
+# Step 9: Check the output
+
+sort -t $'\t' -k3 -rn output/actorJoin/part-r-* | head -n 10
+
+# Step 10: The following are the results in order (from most to less frequent)
+
+nm0411100       Kenjirô Ishimaru        10850
+nm1296472       Vic Sotto       10556
+nm0815658       Tito Sotto      9992
+nm2900549       Joel de Leon    9946
+nm10120013      Sameera Sherief 9905
+nm1310779       Manuela do Monte        8145
+nm1426682       Delhi Kumar     8118
+nm2069739       Arnold Clavio   8026
+nm2045259       Pia Arcangel    8025
+nm5545511       Giovanna Grigio 7947

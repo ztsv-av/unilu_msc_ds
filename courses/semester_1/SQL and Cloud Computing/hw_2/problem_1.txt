@@ -1,0 +1,48 @@
+The file was created in Jupyter Notebook, written in Python, ran locally.
+
+# Questions (a) - (b)
+
+See Problem_1.ipynb
+
+# Question (c)
+
+Runtimes:
+
+| Number of records | Total Algorithm Runtime (s) |
+|-------------------|-----------------------------|
+|              10^6 |           4.627887964248657 |
+|            6*10^6 |          22.402337074279785 |
+|           11*10^6 |           42.09954810142517 |
+|           16*10^6 |          61.695196866989136 |
+|           21*10^6 |           82.90864992141724 |
+|           26*10^6 |          106.82771301269531 |
+|           31*10^6 |          123.36549425125122 |
+|           36*10^6 |          145.86660480499268 |
+|           41*10^6 |          168.16259002685547 |
+|           46*10^6 |          182.37882709503174 |
+|           51*10^6 |           202.4735488128662 |
+|           56*10^6 |           220.1821231842041 |
+|           61*10^6 |          236.11819458007812 |
+|           66*10^6 |           255.8882637023926 |
+|           71*10^6 |          273.91035652160645 |
+|           76*10^6 |           292.6394271850586 |
+|           81*10^6 |          309.13177394866943 |
+|           86*10^6 |           332.7847623825073 |
+|           91*10^6 |          351.95376777648926 |
+|           96*10^6 |            369.960412979126 |
+|          101*10^6 |           388.5634927749634 |
+
+We observe a linearity in the algorithm runtime with respect to the number of records. 
+For each step of 5*10^6 records, the runtime increases by an average of 20 seconds.
+
+# Question (d)
+
+Since we observe linearity when computing the median with just one computer as we increase the number of files, this suggests that the problem might 
+be inherently parallelizable. However, achieving linear speedup when parallelizing computations is practically impossible, there is always a limit point.
+For example, if 95% of the program can be parallelized, the theoretical maximum speedup using parallel computing would be 20 times.
+Calculating the median is a task that involves sorting the data, and sorting is generally a task that can be parallelized up to a certain point.
+Some considerations that might limit the achievable speedup: communication overhead, data dependencies, task granularity.
+Observing this linearity suggests that s is close to 1, and the speedup is proportional to the number of processors (p). Therefore,  s ≈ 1.
+In Amdahl's law: Fs ≈ 0 and Fp ≈ 1, speedup = p.
+In Gustafon's law: s ≈ 1, therefore speedup ≈ 2p - 1, where p = number of processors
+Again, note that it is practically impossible for s = 1 and for speedup to be linear as we infinitely increase the number of processors. 

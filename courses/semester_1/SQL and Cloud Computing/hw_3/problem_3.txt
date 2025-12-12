@@ -1,0 +1,400 @@
+# problem 3
+
+# total runtime: 40 minutes, 26 seconds, 39 ms (2,426,039 ms)
+
+# (a): elapsed time for problem 3 (a): 3 minutes, 48 seconds and 852 ms (228,852 ms)
+# (b): elapsed time for problem 3 (b): 18 minutes, 37 seconds and 871 ms (1,117,871 ms)
+# (c): elapsed time for problem 3 (c): 17 minutes, 59 seconds and 316 ms (1,079,316 ms)
+
+# IMPORTANT: the code was run on IRIS
+# IMPORTANT: it is recommended to limit the amount of data used in 'title_principals' .tsv file,
+#   since, when IRIS is under heavy load, it will terminate pig scripts because they run for too long
+#   (more than 10 minutes)
+#   In order to limit the data used, one can use:
+#   title_principals_full = LOAD './title.principals.tsv' USING ... (load data)
+#   title_principals = LIMIT title_principals_full 5000;
+--------------------------------------------------------------------------------------------------------------------------------
+
+# prerequisites
+
+# download following .tsv files from IMDB database https://datasets.imdbws.com:
+#   name.basics.tsv, title.principals.tsv
+
+# send .tsv files from your local machine to your IRIS home directory
+scp -P 8022 name.basics.tsv.gz <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 title.principals.tsv.gz <yourlogin>@access-iris.uni.lu:~/
+
+# login to the IRIS and request a computational node
+ssh -p 8022 azaitsev@access-iris.uni.lu
+srun -p interactive --pty bash -i
+
+# unzip IMBD files
+gunzip -c name.basics.tsv.gz > name.basics.tsv
+gunzip -c title.principals.tsv.gz > title.principals.tsv
+
+# ONLY ON FIRST TIME: download and extract the Apache Pig 0.17.0 and Hadoop 3.3.4 to your home directory on IRIS
+cd ~/
+wget https://dlcdn.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz
+tar -xvf pig-0.17.0.tar.gz
+wget https://dlcdn.apache.org/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz
+tar -xvf hadoop-3.3.4.tar.gz
+
+# load java module and export environment variables
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PIG_HOME=~/pig-0.17.0
+export PATH=~/hadoop-3.3.4/bin:~/pig-0.17.0/bin:$PATH
+
+# start the 'grunt' command-line shell of Apache Pig
+pig
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+# (a) 
+# select the most popular directors based on how many movies they directed, 
+#   stop after the top 25 directors with the most movies.
+
+# read tables
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+
+# get only directors whose directed only movies
+directors_all = FILTER title_principals BY category == 'director';
+
+# select only nconst, tconst
+directors = FOREACH directors_all GENERATE nconst, tconst;
+
+# group directors by nconst and count the number of movies
+director_counts = FOREACH (GROUP directors BY nconst) GENERATE group AS nconst, COUNT(directors) AS title_count;
+
+# rank directors based on the title_count
+ranked_directors = ORDER director_counts BY title_count DESC;
+
+# select the top 25 directors
+top_directors = LIMIT ranked_directors 25;
+
+# join with name_basics to get additional information
+top_directors_joined = JOIN top_directors BY nconst, name_basics BY nconst;
+
+# keep only primaryName and title_count
+top_directors = FOREACH top_directors_joined GENERATE primaryName AS director_name, title_count;
+
+# order the result by title_count in descending order
+top_directors_ordered = ORDER top_directors BY title_count DESC;
+
+# store result into 'p3_a_result' folder
+STORE top_directors_ordered INTO 'p3_a_result';
+
+# FULL SCRIPT WITHOUT COMMENTS FOR EASIER EXECUTION
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+directors_all = FILTER title_principals BY category == 'director';
+directors = FOREACH directors_all GENERATE nconst, tconst;
+director_counts = FOREACH (GROUP directors BY nconst) GENERATE group AS nconst, COUNT(directors) AS title_count;
+ranked_directors = ORDER director_counts BY title_count DESC;
+top_directors = LIMIT ranked_directors 25;
+top_directors_joined = JOIN top_directors BY nconst, name_basics BY nconst;
+top_directors = FOREACH top_directors_joined GENERATE primaryName AS director_name, title_count;
+top_directors_ordered = ORDER top_directors BY title_count DESC;
+STORE top_directors_ordered INTO 'p3_a_result';
+
+# content of 'p3_a_result/part-r-00000' file
+```
+Johnny Manahan  13093
+Nivedita Basu   12316
+Saibal Banerjee 11632
+Bert De Leon    10353
+Anil v Kumar    8961
+Santosh Bhatt   8458
+Conrado Lumabas 8023
+Danie Joubert   7981
+Silvia Abravanel        7434
+Malu London     7433
+Duma Ndlovu     7336
+Mário Márcio Bandarra   6943
+Henrique Martins        6923
+Paul Alter      6509
+Shashank Bali   6450
+Walter Avancini 6362
+Kevin McCarthy  6120
+Dilip Kumar     5950
+Atílio Riccó    5778
+Bruno De Paola  5734
+Jorge Fernando  5724
+Kaushik Ghatak  5718
+Louie Ignacio   5627
+Ajay Veermal    5467
+S. Kumaran      5449
+```
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+# (b)
+# select the top 25 pairs of actors that occur together in a same movie, 
+#   ordered by the number of movies in which they co-occur. 
+
+# read tables
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+
+# select only actors
+actors_actors1 = FILTER title_principals BY category == 'actor' OR category == 'actress';
+actors_actors2 = FILTER title_principals BY category == 'actor' OR category == 'actress';
+
+# join actors with itself on tconst
+actors_actors_cooccurrences = JOIN actors_actors1 BY tconst, actors_actors2 BY tconst;
+
+# remove duplicates
+actors_actors = FILTER actors_actors_cooccurrences BY actors_actors1::nconst<actors_actors2::nconst;
+
+# create a group for each actor pair
+grouped_actors_actors = GROUP actors_actors BY (actors_actors1::nconst, actors_actors2::nconst);
+
+# count the entries in each group
+cooccurrence_count_actors = FOREACH grouped_actors_actors GENERATE group.actors_actors1::nconst AS nconst1, group.actors_actors2::nconst AS nconst2, COUNT(actors_actors) AS costarring_count;
+
+# order by costarring_count in descending order
+ordered_result_actors = ORDER cooccurrence_count_actors BY costarring_count DESC;
+
+# limit to the top 25 pairs
+top_25_pairs_actors = LIMIT ordered_result_actors 25;
+
+# extract name for the first actor
+actor1_info = JOIN top_25_pairs_actors BY nconst1, name_basics BY nconst;
+actor1_details = FOREACH actor1_info GENERATE name_basics::primaryName AS actor1_name, top_25_pairs_actors::nconst2 AS nconst2, top_25_pairs_actors::costarring_count AS costarring_count;
+
+# extract name for the second actor
+actor2_info = JOIN actor1_details BY nconst2, name_basics BY nconst;
+actor2_details = FOREACH actor2_info GENERATE actor1_details::actor1_name AS actor1_name, name_basics::primaryName AS actor2_name, actor1_details::costarring_count AS costarring_count;
+
+# order result by costarring_count in descending order
+actor1_actor2_ordered = ORDER actor2_details BY costarring_count DESC;
+
+# store result into 'p3_b_result' folder
+STORE actor1_actor2_ordered INTO 'p3_b_result';
+
+# FULL SCRIPT WITHOUT COMMENTS FOR EASIER EXECUTION
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+actors_actors1 = FILTER title_principals BY category == 'actor' OR category == 'actress';
+actors_actors2 = FILTER title_principals BY category == 'actor' OR category == 'actress';
+actors_actors_cooccurrences = JOIN actors_actors1 BY tconst, actors_actors2 BY tconst;
+actors_actors = FILTER actors_actors_cooccurrences BY actors_actors1::nconst<actors_actors2::nconst;
+grouped_actors_actors = GROUP actors_actors BY (actors_actors1::nconst, actors_actors2::nconst);
+cooccurrence_count_actors = FOREACH grouped_actors_actors GENERATE group.actors_actors1::nconst AS nconst1, group.actors_actors2::nconst AS nconst2, COUNT(actors_actors) AS costarring_count;
+ordered_result_actors = ORDER cooccurrence_count_actors BY costarring_count DESC;
+top_25_pairs_actors = LIMIT ordered_result_actors 25;
+actor1_info = JOIN top_25_pairs_actors BY nconst1, name_basics BY nconst;
+actor1_details = FOREACH actor1_info GENERATE name_basics::primaryName AS actor1_name, top_25_pairs_actors::nconst2 AS nconst2, top_25_pairs_actors::costarring_count AS costarring_count;
+actor2_info = JOIN actor1_details BY nconst2, name_basics BY nconst;
+actor2_details = FOREACH actor2_info GENERATE actor1_details::actor1_name AS actor1_name, name_basics::primaryName AS actor2_name, actor1_details::costarring_count AS costarring_count;
+actor1_actor2_ordered = ORDER actor2_details BY costarring_count DESC;
+STORE actor1_actor2_ordered INTO 'p3_b_result';
+
+# content of 'p3_b_result/part-r-00000' file
+```
+Tito Sotto      Vic Sotto       9988
+Vic Sotto       Joel de Leon    9945
+Tito Sotto      Joel de Leon    9945
+Pia Arcangel    Arnold Clavio   8024
+Manuela do Monte        Giovanna Grigio 7934
+Audrey Peters   Ron Tomme       7222
+Yuma Sanada     Yuki Nozawa     6992
+Peter Hobbs     Jada Rowland    5003
+Connie Ferguson Rapulana Seiphemo       4755
+Aadesh Bandekar Nilesh Sable    4704
+Jitendra Joshi  Aadesh Bandekar 4704
+Jitendra Joshi  Nilesh Sable    4704
+Christine Basson        Sebastian Hofmeyr       4422
+Shaleen Surtie-Richards Sebastian Hofmeyr       4422
+Brümilda van Rensburg   Sebastian Hofmeyr       4422
+Shaleen Surtie-Richards Christine Basson        4422
+Brümilda van Rensburg   Christine Basson        4422
+Shaleen Surtie-Richards Brümilda van Rensburg   4422
+Sameera Sherief Mounica 3996
+Ernie Coombs    Judith Lawrence 3924
+Clint Brink     Hykie Berg      3757
+Luz Stella Luengas      Luis Eduardo Motoa      3558
+Mat Solar       Nani Widjaja    3474
+Forrest Compton Ann Flood       3373
+Hans Strydom    Hykie Berg      3350
+```
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+# (c)
+# find frequent 2-itemsets of actors or directors who occurred together in at least 4 movies.
+
+# read tables
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+
+# select only actors, directors
+actors_directors1 = FILTER title_principals BY category == 'actor' OR category == 'actress' OR category == 'director';
+actors_directors2 = FILTER title_principals BY category == 'actor' OR category == 'actress' OR category == 'director';
+
+# join actors, directors with itself on tconst
+actors_directors_cooccurrences = JOIN actors_directors1 BY tconst, actors_directors2 BY tconst;
+
+# remove duplicates
+actors_directors = FILTER actors_directors_cooccurrences BY actors_directors1::nconst<actors_directors2::nconst;
+
+# create a group for each actor, director pair
+grouped_actors_directors = GROUP actors_directors BY (actors_directors1::nconst, actors_directors2::nconst);
+
+# filter groups where size of the group >= 4
+frequent_2_itemsets = FILTER grouped_actors_directors BY SIZE(actors_directors) >= 4;
+
+# count the entries in each group
+cooccurrence_count = FOREACH frequent_2_itemsets GENERATE group.actors_directors1::nconst AS nconst1, group.actors_directors2::nconst AS nconst2, COUNT(actors_directors) AS costarring_count;
+
+# extract name for the first person
+person1_info = JOIN cooccurrence_count BY nconst1, name_basics BY nconst;
+person1_details = FOREACH person1_info GENERATE name_basics::primaryName AS person1_name, cooccurrence_count::nconst2 AS nconst2, cooccurrence_count::costarring_count AS costarring_count;
+
+# extract name for the second person
+person2_info = JOIN person1_details BY nconst2, name_basics BY nconst;
+person2_details = FOREACH person2_info GENERATE person1_details::person1_name AS person1_name, name_basics::primaryName AS person2_name, person1_details::costarring_count AS costarring_count;
+
+# order result by costarring_count in descending order
+person1_person2_ordered = ORDER person2_details BY costarring_count DESC;
+
+# store result into 'p3_c_result' folder
+STORE person1_person2_ordered INTO 'p3_c_result';
+
+# FULL SCRIPT WITHOUT COMMENTS FOR EASIER EXECUTION
+name_basics = LOAD './name.basics.tsv' USING PigStorage('\t') AS (
+    nconst:chararray,
+    primaryName:chararray,
+    birthYear:chararray,
+    deathYear:chararray,
+    primaryProfession:chararray,
+    knownForTitles:chararray
+);
+title_principals = LOAD './title.principals.tsv' USING PigStorage('\t') AS (
+    tconst:chararray,
+    ordering:chararray,
+    nconst:chararray,
+    category:chararray,
+    job:chararray,
+    characters:chararray
+);
+actors_directors1 = FILTER title_principals BY category == 'actor' OR category == 'actress' OR category == 'director';
+actors_directors2 = FILTER title_principals BY category == 'actor' OR category == 'actress' OR category == 'director';
+actors_directors_cooccurrences = JOIN actors_directors1 BY tconst, actors_directors2 BY tconst;
+actors_directors = FILTER actors_directors_cooccurrences BY actors_directors1::nconst<actors_directors2::nconst;
+grouped_actors_directors = GROUP actors_directors BY (actors_directors1::nconst, actors_directors2::nconst);
+frequent_2_itemsets = FILTER grouped_actors_directors BY SIZE(actors_directors) >= 4;
+cooccurrence_count = FOREACH frequent_2_itemsets GENERATE group.actors_directors1::nconst AS nconst1, group.actors_directors2::nconst AS nconst2, COUNT(actors_directors) AS costarring_count;
+person1_info = JOIN cooccurrence_count BY nconst1, name_basics BY nconst;
+person1_details = FOREACH person1_info GENERATE name_basics::primaryName AS person1_name, cooccurrence_count::nconst2 AS nconst2, cooccurrence_count::costarring_count AS costarring_count;
+person2_info = JOIN person1_details BY nconst2, name_basics BY nconst;
+person2_details = FOREACH person2_info GENERATE person1_details::person1_name AS person1_name, name_basics::primaryName AS person2_name, person1_details::costarring_count AS costarring_count;
+person1_person2_ordered = ORDER person2_details BY costarring_count DESC;
+STORE person1_person2_ordered INTO 'p3_c_result';
+
+# content of 'p3_c_result/part-r-00000' file
+```
+Tito Sotto      Vic Sotto       9988
+Tito Sotto      Joel de Leon    9945
+Vic Sotto       Joel de Leon    9945
+Vic Sotto       Bert De Leon    9908
+Tito Sotto      Bert De Leon    9785
+Bert De Leon    Joel de Leon    9785
+Pia Arcangel    Arnold Clavio   8024
+Conrado Lumabas Arnold Clavio   8023
+Conrado Lumabas Pia Arcangel    8023
+Manuela do Monte        Giovanna Grigio 7934
+Manuela do Monte        Silvia Abravanel        7434
+Manuela do Monte        Malu London     7433
+Silvia Abravanel        Giovanna Grigio 7433
+Silvia Abravanel        Malu London     7431
+Malu London     Giovanna Grigio 7430
+Audrey Peters   Ron Tomme       7222
+Yuma Sanada     Yuki Nozawa     6992
+Peter Hobbs     Gloria Monty    5004
+Gloria Monty    Jada Rowland    5004
+Peter Hobbs     Jada Rowland    5003
+Connie Ferguson Rapulana Seiphemo       4755
+Pooja Gaur      Ajay Veermal    4717
+Jitendra Joshi  Aadesh Bandekar 4704
+Jitendra Joshi  Nilesh Sable    4704
+Aadesh Bandekar Nilesh Sable    4704
+.
+.
+.
+```

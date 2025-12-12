@@ -1,0 +1,354 @@
+# problem 1
+
+# total runtime: 280,613 ms (4 minutes, 33 seconds, 631 ms)
+
+# (a): elapsed time for problem 1 (a): 275,830 ms (4 minutes, 28 seconds, 830 ms)
+# (b): elapsed time for problem 1 (b): 4783 ms (4 seconds, 783 ms)
+# (c): not completed
+
+# IMPORTANT: the code was run on IRIS
+# IMPORTANT: the code was run on Wedndesday around 13:30, so it took more than usual to execute the MapReduce
+
+# prerequisites
+
+# send .java files from your local machine to your IRIS home directory
+scp -P 8022 WordCount.java <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 WordCount2.java <yourlogin>@access-iris.uni.lu:~/
+
+# send Wikipedia-En-41784-Articles.tar.gz from your local machine to your IRIS home directory
+scp -P 8022 Wikipedia-En-41784-Articles.tar.gz <yourlogin>@access-iris.uni.lu:~/
+
+# login to the IRIS and request a computational node
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+srun -p interactive --pty bash -i
+
+# unzip Wikipedia-En-41784-Articles.tar.gz
+tar -xzf Wikipedia-En-41784-Articles.tar.gz
+
+# export environment settings for Java and Hadoop:
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# compile the WordCount.java file and put the class file into a Jar file called WordCount.jar:
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar *.java
+jar -cvf WordCount.jar *.class
+jar -cvf WordCount2.jar *.class
+
+# run WordCount.java on all wikipedia articles
+hadoop jar WordCount.jar WordCount ~/Wikipedia-En-41784-Articles/AA/ ~/Wikipedia-En-41784-Articles/AB/ ~/Wikipedia-En-41784-Articles/AC/ ~/Wikipedia-En-41784-Articles/AD/ ~/Wikipedia-En-41784-Articles/AE/ ~/Wikipedia-En-41784-Articles/AF/ ~/Wikipedia-En-41784-Articles/AG/ ~/Wikipedia-En-41784-Articles/AH/ ~/Wikipedia-En-41784-Articles/AI/ ~/Wikipedia-En-41784-Articles/AJ/ ~/Wikipedia-En-41784-Articles/AK/ ~/hadoop-1a-output
+
+# run WordCount2.java on output from (a) to find specific keywords
+# IMPORTANT: specify words that you want to search for 
+#   by adding -keywords argument followed by a list of words separated by command
+#   example: -keywords test,word,search
+hadoop jar WordCount2.jar WordCount2 ~/hadoop-1a-output ~/hadoop-1b-output -keywords zywny,zyx,zywnyx
+
+# (a) WordCount.java code
+# see code comments for explanation
+```
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Comparator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Collections;
+
+import javax.naming.Context;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCount {
+
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, Text> {
+
+        // here we convert IntWritable into String
+		String one = "1";
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String line = value.toString().toLowerCase();
+			// split .1lineperdoc file by new line
+			String[] articles = line.split("\\n");
+			// iterate through all articles splitted
+			for (String article : articles) {
+				// define regex pattern to split the current article
+				// this regex will match a number inside the first group, which is (\\d+)
+				// and also match a string inside the doc tags, which is (.*?)
+				String regex = "<doc id=\"(\\d+)\"[^>]*>(.*?)</doc>";
+				Pattern pattern = Pattern.compile(regex);
+				Matcher matcher = pattern.matcher(article);
+				if (matcher.find()) {
+					String id = matcher.group(1);
+					String text = matcher.group(2).trim();
+					String[] tokens = text.split("[^\\w']+");
+					// iterate though every word (token) in the current article
+					//     and return ((token, id), 1)
+					for (String token : tokens) {
+						String token_id = token + "," + id;
+						context.write(new Text(token_id), new Text(one));
+				}
+				} else {
+					continue;
+				}
+			}
+		}
+	}
+
+	// use to convert ((token, id), 1) pairs into (token, (id, sum))
+	// here sum - sum for all same (token, id) pairs
+	public static class Combine extends Reducer<Text, Text, Text, Text> {
+		private Text result = new Text();
+
+		public void reduce(Text key, Iterable<Text> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (Text val : values) {
+				sum += Integer.parseInt(val.toString());
+			}
+			String article_id = key.toString().split(",")[1];
+
+			result.set(article_id + "," + String.valueOf(sum));
+			context.write(new Text(key.toString().split(",")[0]), result);
+		}
+
+	}
+
+	public static class Reduce extends Reducer<Text, Text, Text, Text> {
+
+		@Override
+		public void reduce(Text key, Iterable<Text> values, Context context)
+			throws IOException, InterruptedException {
+	
+			List<String> postingsList = new ArrayList<>();
+
+			// iterate through postings and append to the new postings list
+			for (Text value : values) {
+				postingsList.add(value.toString());
+			}
+	
+			// sort postings in increasing order of article-id
+			Collections.sort(postingsList, Comparator.comparing(text -> {
+				String artcile_id = text.split(",")[0];
+				return Integer.parseInt(artcile_id);
+			}));
+			
+			// append sorted postings to the StringBuilder
+			//     and separate each (id, sum) tuple by comma
+			StringBuilder sortedPostingsList = new StringBuilder();
+			for (String posting : postingsList) {
+				sortedPostingsList.append(posting).append(",");
+			}
+	
+			// remove the trailing comma
+			if (sortedPostingsList.length() > 0) {
+				sortedPostingsList.setLength(sortedPostingsList.length() - 1);
+			}
+			
+			context.write(key, new Text(sortedPostingsList.toString()));
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCount");
+		job.setJar("WordCount.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		job.setCombinerClass(Combine.class);
+		job.setReducerClass(Reduce.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+
+		// specify all articles subfolders as arguments
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileInputFormat.addInputPath(job, new Path(args[1]));
+		FileInputFormat.addInputPath(job, new Path(args[2]));
+		FileInputFormat.addInputPath(job, new Path(args[3]));
+		FileInputFormat.addInputPath(job, new Path(args[4]));
+		FileInputFormat.addInputPath(job, new Path(args[5]));
+		FileInputFormat.addInputPath(job, new Path(args[6]));
+		FileInputFormat.addInputPath(job, new Path(args[7]));
+		FileInputFormat.addInputPath(job, new Path(args[8]));
+		FileInputFormat.addInputPath(job, new Path(args[9]));
+		FileInputFormat.addInputPath(job, new Path(args[10]));
+		// specify output directory
+		FileOutputFormat.setOutputPath(job, new Path(args[11]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+```
+# (a) part of output in ~/hadoop-1a-output/part-r-00000 file
+tail -n 20 ~/hadoop-1a-output/part-r-00000
+```
+zywiec  18671,1
+zywny   10823,1
+zyx     4071,1,11229,1,20907,1,22371,1,60705,1
+zyxs    2824,2
+zyzio   14356,1
+zz      2756,1,3352,2,3410,1,4200,1,5033,1,6420,1,9248,1,9256,1,12431,1,15824,1,15830,1,16167,1,17360,1,17396,2,18713,1,18856,1,20180,1,20303,1,22743,2,23749,1,24172,1,25423,1,25717,1,26805,1,27614,1,28232,1,29156,1,33501,1,34537,48,38076,1,48338,1,49399,1,49414,4,50709,1,61045,2,63025,2,85406,1
+zz377   26945,1
+zz664   26501,1
+zz9     31353,2
+zza     24636,1
+zzap    19668,2,80839,1
+zze     87812,2
+zzed    42764,1
+zzeri   45882,1
+zzf     3722,1
+zzp     59760,1
+zzs     17765,2
+zzt     1884,1
+zzw     43977,1,49414,1
+zzz     32693,1,49938,2
+```
+
+# (b) WordCount2.java code
+# see code comments for explanation
+# by looking at the code, you can notice that we removed some of the methods from WordCount2.java file
+#   since we do not need it to implement the 'Search Engine'
+# we kept the '-casesensitive' option so that it automatically
+#   converts uppercase letters into lowercase in specified -keywords
+```
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.StringUtils;
+
+public class WordCount2 {
+
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+		private boolean caseSensitive = false;
+		private String[] keywords;
+
+		@Override
+		public void setup(Context context) throws IOException, InterruptedException {
+			Configuration conf = context.getConfiguration();
+			caseSensitive = conf.getBoolean("wordcount.case.sensitive", false);
+			// check if any keywords passed
+			if (conf.getBoolean("wordcount.detect.keywords", false)) {
+				String keywordsAllStrings = conf.get("wordcount.keywords");
+				// split input keywords by comma
+				keywords = keywordsAllStrings.split(",");
+			}
+		}
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String document = caseSensitive ? value.toString() : value.toString().toLowerCase();
+			// split input document by new lines
+			String[] lines = document.split("\n");
+			// iterate for each line in document
+			for (String line : lines) {
+				// split line by spaces
+				String[] word_id_sum = line.split("\\s+");
+				// iterate for each keyword in input keywords
+				for (String keyword : keywords) {
+					// check if token in keywords
+					if (word_id_sum[0].equals(keyword)) {
+						// separate line by tab (spaces) and pick only string consisting of article_id, sum
+						String id_sum = word_id_sum[1];
+						// split article_id,sum,article_id,sum,... by comma
+						String[] values = id_sum.split(",");
+						// every even index is article_id, every odd (next) index is sum
+						for (int i = 0; i < values.length; i += 2) {
+							String id = values[i];
+							int sum = Integer.parseInt(values[i + 1]);
+							// pass article_id, sum to the reducer
+							context.write(new Text(id), new IntWritable(sum));
+						}
+					}
+					else {
+						continue;
+					}
+				}
+			}
+		}	
+	}
+
+	public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+		private IntWritable result = new IntWritable();
+
+		public void reduce(Text key, Iterable<IntWritable> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCount2");
+		job.setJar("WordCount2.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		// job.setCombinerClass(IntSumReducer.class); // enable to use 'local aggregation'
+		job.setReducerClass(IntSumReducer.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		for (int i = 0; i < args.length; ++i) {
+			if ("-keywords".equals(args[i])) {
+				job.getConfiguration().setBoolean("wordcount.detect.keywords", true);
+				job.getConfiguration().set("wordcount.keywords", args[i+1]);
+				System.out.println("USING ONLY KEYWORDS: " + args[i+1]);
+			} else if ("-casesensitive".equals(args[i])) {
+				job.getConfiguration().setBoolean("wordcount.case.sensitive", true);
+				System.out.println("USING CASE SENSITIVE TOKENS: " + "-casesensitive".equals(args[i]));
+			}
+		}
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+```
+
+# (b) part of output in ~/hadoop-1b-output/part-r-00000 file
+cat ~/hadoop-1b-output/part-r-00000
+```
+10823   1
+11229   1
+20907   1
+22371   1
+4071    1
+60705   1
+```
+# notice how the program does not include any findings on the word zywnyx
+#   since it is not contained in 'hadoop-1a-output/part-r-00000' file

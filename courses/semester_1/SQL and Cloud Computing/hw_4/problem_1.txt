@@ -1,0 +1,311 @@
+-- problem 1
+
+-- total runtime: 1540.332 seconds
+-- (a) runtime: 85.884 seconds
+-- (b) runtime: 739.302 seconds
+-- (c) runtime: 715.146 seconds
+
+-- IMPORTANT: the code was run on IRIS
+-- IMPORTANT: the execution times highly depend on the current server load
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- prerequisites
+
+-- download following .tsv files from IMDB database https://datasets.imdbws.com:
+--   name.basics.tsv, title.principals.tsv
+
+-- send .tsv files from your local machine to your IRIS home directory
+scp -P 8022 name.basics.tsv.gz <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 title.principals.tsv.gz <yourlogin>@access-iris.uni.lu:~/
+
+-- login to the IRIS and request a computational node
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+srun -p interactive --pty bash -i
+
+-- unzip IMBD files
+gunzip -c name.basics.tsv.gz > name.basics.tsv
+gunzip -c title.principals.tsv.gz > title.principals.tsv
+
+-- ONLY ON FIRST TIME: download and extract the Apache Hive 3.1.3 binaries to your home directory on IRIS
+cd ~/
+wget https://dlcdn.apache.org/hive/hive-3.1.3/apache-hive-3.1.3-bin.tar.gz
+tar -xvf apache-hive-3.1.3-bin.tar.gz
+
+-- export environment variables, increase the Java heap space for Hive 3.3.4, load java module 
+export HADOOP_HOME=~/hadoop-3.3.4
+export HADOOP_CLIENT_OPTS=" -Xmx1024m"
+export HIVE_HOME=~/apache-hive-3.1.3-bin
+export PATH=~/hadoop-3.3.4/bin:~/apache-hive-3.1.3-bin/bin:$PATH
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+
+-- ONLY ON FIRST TIME: initialize your Metastore schema for Hive
+--   remove previous data first, if necessary
+rm -rf ./metastore_db ./derby.log mytables
+
+schematool -dbType derby -initSchema
+
+-- start the Hive2 server and the Beeline client in the same shell (press enter after first command)
+hiveserver2 &
+beeline -n dataflair -u jdbc:hive2://localhost:10000
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (a)
+-- select the most popular directors based on how many movies they directed, 
+--   stop after the top 25 directors with the most movies.
+
+-- create tables
+CREATE TABLE IF NOT EXISTS name_basics (
+    nconst STRING,
+    primaryName STRING,
+    birthYear INT,
+    deathYear INT,
+    primaryProfession ARRAY<STRING>,
+    knownForTitles ARRAY<STRING>
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION './hive_tables/name_basics';
+
+CREATE TABLE IF NOT EXISTS title_principals (
+    tconst STRING,
+    ordering INT,
+    nconst STRING,
+    category STRING,
+    job STRING,
+    characters STRING
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION './hive_tables/title_principals';
+
+-- load data into tables
+LOAD DATA LOCAL INPATH './name.basics.tsv' INTO TABLE name_basics;
+LOAD DATA LOCAL INPATH './title.principals.tsv' INTO TABLE title_principals;
+
+-- select directors, count how many movies they directed, order by movies count and limit to 25
+DROP VIEW IF EXISTS ordered_directors;
+CREATE VIEW ordered_directors AS
+SELECT nconst, title_count
+FROM (
+    SELECT nconst, COUNT(tconst) AS title_count
+    FROM (
+        SELECT nconst, tconst
+        FROM title_principals
+        WHERE category = 'director'
+    ) AS directors_all
+    GROUP BY nconst
+) AS director_counts
+ORDER BY title_count DESC
+LIMIT 25;
+
+DROP VIEW IF EXISTS director_info;
+CREATE VIEW director_info AS
+SELECT od.nconst, nb.primaryName, od.title_count
+FROM ordered_directors od
+JOIN name_basics nb ON od.nconst = nb.nconst
+ORDER BY title_count DESC
+LIMIT 25;
+
+SELECT * FROM director_info;
+
+``` output
++-----------------------+----------------------------+----------------------------+
+| director_info.nconst  | director_info.primaryname  | director_info.title_count  |
++-----------------------+----------------------------+----------------------------+
+| nm1203430             | Johnny Manahan             | 13093                      |
+| nm1966600             | Nivedita Basu              | 12316                      |
+| nm8467983             | Saibal Banerjee            | 11632                      |
+| nm1409127             | Bert De Leon               | 10353                      |
+| nm1667633             | Anil v Kumar               | 8961                       |
+| nm7867124             | Santosh Bhatt              | 8458                       |
+| nm13220986            | Conrado Lumabas            | 8023                       |
+| nm1083609             | Danie Joubert              | 7981                       |
+| nm5236281             | Silvia Abravanel           | 7434                       |
+| nm5239804             | Malu London                | 7433                       |
+| nm5262331             | Duma Ndlovu                | 7336                       |
+| nm0051678             | Mário Márcio Bandarra      | 6943                       |
+| nm0554045             | Henrique Martins           | 6923                       |
+| nm0022750             | Paul Alter                 | 6509                       |
+| nm5460792             | Shashank Bali              | 6450                       |
+| nm0042771             | Walter Avancini            | 6362                       |
+| nm0565214             | Kevin McCarthy             | 6120                       |
+| nm15377238            | Dilip Kumar                | 5950                       |
+| nm0723330             | Atílio Riccó               | 5778                       |
+| nm2544856             | Bruno De Paola             | 5734                       |
+| nm0273084             | Jorge Fernando             | 5724                       |
+| nm0960965             | Kaushik Ghatak             | 5718                       |
+| nm1402433             | Louie Ignacio              | 5627                       |
+| nm7478784             | Ajay Veermal               | 5467                       |
+| nm5727175             | S. Kumaran                 | 5449                       |
++-----------------------+----------------------------+----------------------------+
+```
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (b)
+-- select the top 25 pairs of actors that occur together in a same movie, 
+--   ordered by the number of movies in which they co-occur
+
+-- select actors and actresses
+DROP VIEW IF EXISTS actors_actors1;
+CREATE VIEW actors_actors1 AS
+SELECT tconst, nconst
+FROM title_principals
+WHERE category='actor' OR category='actress';
+
+-- select actors and actresses
+DROP VIEW IF EXISTS actors_actors2;
+CREATE VIEW actors_actors2 AS
+SELECT tconst, nconst
+FROM title_principals
+WHERE category='actor' OR category='actress';
+
+-- join 2 actors tables, group by nconsts, 
+--   order by costarring_count, limit to 25
+DROP VIEW IF EXISTS top_25_pairs_actors;
+CREATE VIEW top_25_pairs_actors AS
+SELECT nconst1, nconst2, costarring_count
+FROM (
+    SELECT nconst1, nconst2, COUNT(*) AS costarring_count
+    FROM (
+        SELECT a1.tconst, a1.nconst AS nconst1, a2.nconst AS nconst2
+        FROM actors_actors1 a1
+        JOIN actors_actors2 a2 ON a1.tconst = a2.tconst
+        WHERE a1.nconst < a2.nconst
+    ) AS actors_actors_cooccurrences
+    GROUP BY nconst1, nconst2
+) AS grouped_actors_actors
+ORDER BY costarring_count DESC
+LIMIT 25;
+
+-- add actors names
+DROP VIEW IF EXISTS actor_info;
+CREATE VIEW actor_info AS
+SELECT t.nconst1, nb1.primaryName AS actor1_name, t.nconst2, nb2.primaryName AS actor2_name, t.costarring_count
+FROM top_25_pairs_actors t
+JOIN name_basics nb1 ON t.nconst1 = nb1.nconst
+JOIN name_basics nb2 ON t.nconst2 = nb2.nconst
+ORDER BY costarring_count DESC
+LIMIT 25;
+
+SELECT * FROM actor_info;
+
+``` output
++---------------------+--------------------------+---------------------+------------------------------+-------------------------+
+| actor_info.nconst1  |  actor_info.actor1_name  | actor_info.nconst2  | actor_info.costarring_count  | actor_info.actor2_name  |
++---------------------+--------------------------+---------------------+------------------------------+-------------------------+
+| nm0815658           | Tito Sotto               | nm1296472           | Vic Sotto               | 9988                         |
+| nm0815658           | Tito Sotto               | nm2900549           | Joel de Leon            | 9945                         |
+| nm1296472           | Vic Sotto                | nm2900549           | Joel de Leon            | 9945                         |
+| nm2045259           | Pia Arcangel             | nm2069739           | Arnold Clavio           | 8024                         |
+| nm1310779           | Manuela do Monte         | nm5545511           | Giovanna Grigio         | 7934                         |
+| nm0676333           | Audrey Peters            | nm0866913           | Ron Tomme               | 7222                         |
+| nm2501191           | Yuma Sanada              | nm2618196           | Yuki Nozawa             | 6992                         |
+| nm0387617           | Peter Hobbs              | nm0746709           | Jada Rowland            | 5003                         |
+| nm0536093           | Connie Ferguson          | nm0782648           | Rapulana Seiphemo       | 4755                         |
+| nm13295636          | Aadesh Bandekar          | nm13295637          | Nilesh Sable            | 4704                         |
+| nm1241555           | Jitendra Joshi           | nm13295637          | Nilesh Sable            | 4704                         |
+| nm1241555           | Jitendra Joshi           | nm13295636          | Aadesh Bandekar         | 4704                         |
+| nm1518349           | Christine Basson         | nm1944549           | Sebastian Hofmeyr       | 4422                         |
+| nm0887808           | Brümilda van Rensburg    | nm1944549           | Sebastian Hofmeyr       | 4422                         |
+| nm0887808           | Brümilda van Rensburg    | nm1518349           | Christine Basson        | 4422                         |
+| nm0839741           | Shaleen Surtie-Richards  | nm1518349           | Christine Basson        | 4422                         |
+| nm0839741           | Shaleen Surtie-Richards  | nm0887808           | Brümilda van Rensburg   | 4422                         |
+| nm0839741           | Shaleen Surtie-Richards  | nm1944549           | Sebastian Hofmeyr       | 4422                         |
+| nm10120013          | Sameera Sherief          | nm4828538           | Mounica                 | 3996                         |
+| nm0177672           | Ernie Coombs             | nm0492858           | Judith Lawrence         | 3924                         |
+| nm1578773           | Clint Brink              | nm2157323           | Hykie Berg              | 3757                         |
+| nm0525123           | Luz Stella Luengas       | nm0609391           | Luis Eduardo Motoa      | 3558                         |
+| nm1100231           | Mat Solar                | nm1295504           | Nani Widjaja            | 3474                         |
+| nm0174030           | Forrest Compton          | nm0282535           | Ann Flood               | 3373                         |
+| nm0835415           | Hans Strydom             | nm2157323           | Hykie Berg              | 3350                         |
++---------------------+--------------------------+---------------------+------------------------------+-------------------------+
+```
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (c)
+-- find frequent 2-itemsets of actors or directors 
+--   who occurred together in at least 4 movies
+
+-- select actors, actresses and directors
+DROP VIEW IF EXISTS actors_directors1;
+CREATE VIEW actors_directors1 AS
+SELECT tconst, nconst
+FROM title_principals
+WHERE category='actor' OR category='actress' OR category='director';
+
+-- select actors, actresses and directors
+DROP VIEW IF EXISTS actors_directors2;
+CREATE VIEW actors_directors2 AS
+SELECT tconst, nconst
+FROM title_principals
+WHERE category='actor' OR category='actress' OR category='director';
+
+-- join 2 actors_directors tables, group by nconsts, 
+--   order by costarring_count having constarring_counts >=4 and limit to 25
+DROP VIEW IF EXISTS top_25_actors_directors;
+CREATE VIEW top_25_actors_directors AS
+SELECT nconst1, nconst2, costarring_count
+FROM (
+    SELECT nconst1, nconst2, COUNT(*) AS costarring_count
+    FROM (
+        SELECT a1.tconst, a1.nconst AS nconst1, a2.nconst AS nconst2
+        FROM actors_directors1 a1
+        JOIN actors_directors2 a2 ON a1.tconst = a2.tconst
+        WHERE a1.nconst < a2.nconst
+    ) AS actors_directors_cooccurrences
+    GROUP BY nconst1, nconst2
+    HAVING COUNT(*) >= 4
+) AS grouped_actors_directors
+ORDER BY costarring_count DESC
+LIMIT 25;
+
+-- add actors, directors names
+DROP VIEW IF EXISTS actors_directors_info;
+CREATE VIEW actors_directors_info AS
+SELECT t.nconst1, nb1.primaryName AS actor1_name, t.nconst2, nb2.primaryName AS actor2_name, t.costarring_count
+FROM top_25_actors_directors t
+JOIN name_basics nb1 ON t.nconst1 = nb1.nconst
+JOIN name_basics nb2 ON t.nconst2 = nb2.nconst
+ORDER BY costarring_count DESC
+LIMIT 25;
+
+SELECT * FROM actors_directors_info;
+
+``` output
++--------------------------------+------------------------------------+--------------------------------+------------------------------------+-----------------------------------------+
+| actors_directors_info.nconst1  | actors_directors_info.actor1_name  | actors_directors_info.nconst2  | actors_directors_info.actor2_name  | actors_directors_info.costarring_count  |
++--------------------------------+------------------------------------+--------------------------------+------------------------------------+-----------------------------------------+
+| nm0815658                      | Tito Sotto                         | nm1296472                      | Vic Sotto                          | 9988                                    |
+| nm1296472                      | Vic Sotto                          | nm2900549                      | Joel de Leon                       | 9945                                    |
+| nm0815658                      | Tito Sotto                         | nm2900549                      | Joel de Leon                       | 9945                                    |
+| nm1296472                      | Vic Sotto                          | nm1409127                      | Bert De Leon                       | 9908                                    |
+| nm1409127                      | Bert De Leon                       | nm2900549                      | Joel de Leon                       | 9785                                    |
+| nm0815658                      | Tito Sotto                         | nm1409127                      | Bert De Leon                       | 9785                                    |
+| nm2045259                      | Pia Arcangel                       | nm2069739                      | Arnold Clavio                      | 8024                                    |
+| nm13220986                     | Conrado Lumabas                    | nm2045259                      | Pia Arcangel                       | 8023                                    |
+| nm13220986                     | Conrado Lumabas                    | nm2069739                      | Arnold Clavio                      | 8023                                    |
+| nm1310779                      | Manuela do Monte                   | nm5545511                      | Giovanna Grigio                    | 7934                                    |
+| nm1310779                      | Manuela do Monte                   | nm5236281                      | Silvia Abravanel                   | 7434                                    |
+| nm5236281                      | Silvia Abravanel                   | nm5545511                      | Giovanna Grigio                    | 7433                                    |
+| nm1310779                      | Manuela do Monte                   | nm5239804                      | Malu London                        | 7433                                    |
+| nm5236281                      | Silvia Abravanel                   | nm5239804                      | Malu London                        | 7431                                    |
+| nm5239804                      | Malu London                        | nm5545511                      | Giovanna Grigio                    | 7430                                    |
+| nm0676333                      | Audrey Peters                      | nm0866913                      | Ron Tomme                          | 7222                                    |
+| nm2501191                      | Yuma Sanada                        | nm2618196                      | Yuki Nozawa                        | 6992                                    |
+| nm0387617                      | Peter Hobbs                        | nm0600353                      | Gloria Monty                       | 5004                                    |
+| nm0600353                      | Gloria Monty                       | nm0746709                      | Jada Rowland                       | 5004                                    |
+| nm0387617                      | Peter Hobbs                        | nm0746709                      | Jada Rowland                       | 5003                                    |
+| nm0536093                      | Connie Ferguson                    | nm0782648                      | Rapulana Seiphemo                  | 4755                                    |
+| nm5156947                      | Pooja Gaur                         | nm7478784                      | Ajay Veermal                       | 4717                                    |
+| nm13295636                     | Aadesh Bandekar                    | nm13295637                     | Nilesh Sable                       | 4704                                    |
+| nm1241555                      | Jitendra Joshi                     | nm13295636                     | Aadesh Bandekar                    | 4704                                    |
+| nm1241555                      | Jitendra Joshi                     | nm13295637                     | Nilesh Sable                       | 4704                                    |
++--------------------------------+------------------------------------+--------------------------------+------------------------------------+-----------------------------------------+
+```

@@ -1,0 +1,243 @@
+-- total runtime: 306s
+-- make sure to change 'path_to_***.tsv' to respective .tsv files
+
+-- Problem 1 (a)
+
+-- create table Ratings and copy data from title.ratings.tsv file into it
+-- runtime: 2s
+DROP TABLE IF EXISTS Ratings;
+CREATE TABLE Ratings (
+        tid char(10),
+        avg_rating numeric,
+        num_votes numeric);
+COPY Ratings FROM 'path_to_title.ratings.tsv' WITH NULL '\N' ENCODING 'UTF8' DELIMITER E'\t' QUOTE E'\b' CSV HEADER;
+SELECT * FROM Ratings LIMIT 100;
+
+-- create table Principals and copy data from title.principals.tsv file into it
+-- runtime: 92s
+DROP TABLE IF EXISTS Principals;
+CREATE TABLE Principals (
+	tid char(10),
+	ordering int,
+	nid char(10),
+	category varchar(32),
+	job varchar(512),
+	characters varchar(2048));
+COPY Principals FROM 'path_to_title.principals.tsv' WITH NULL '\N' ENCODING 'UTF8' DELIMITER E'\t' QUOTE E'\b' CSV HEADER;
+SELECT * FROM Principals LIMIT 100;
+
+-- create table Persons and copy data from name.basics.tsv file into it
+-- runtime: 22s
+DROP TABLE IF EXISTS Persons;
+CREATE TABLE Persons (
+	nid char(10),
+	primaryName varchar(128),
+	birthYear int,
+	deathYear int,
+	primaryProfession varchar(128),
+	knownForTitles varchar(128));
+COPY Persons FROM 'path_to_name.basics.tsv' NULL '\N' ENCODING 'UTF8' DELIMITER E'\t' QUOTE E'\b' CSV HEADER;
+SELECT * FROM Persons LIMIT 100;
+
+-- create table Titles and copy data from title.basics.tsv file into it
+-- runtime: 28s
+DROP TABLE IF EXISTS Titles;
+CREATE TABLE Titles (
+	tid char(10),
+	ttype varchar(12),
+	primaryTitle varchar(1024),
+	originalTitle varchar(1024),
+	isAdult int,
+	startYear int,
+	endYear int,
+	runtimeMinutes int,
+	genres varchar(256));
+COPY Titles FROM 'path_to_title.basics.tsv' NULL '\N' ENCODING 'UTF8' DELIMITER E'\t' QUOTE E'\b' CSV HEADER;
+SELECT * FROM Titles LIMIT 100;
+
+-- Problem 1 (b)
+
+-- create table Movie with specific attributes as shown in E/R schema for Problem 1
+DROP TABLE IF EXISTS Movie CASCADE;
+CREATE TABLE Movie (
+	tid char(10),
+	title varchar(1024),
+	year int,
+	length int,
+	rating numeric);
+
+-- create table Directs with specific attributes as shown in E/R schema for Problem 1
+DROP TABLE IF EXISTS Directs CASCADE;
+CREATE TABLE Directs (
+	nid char(10),
+	tid char(10));
+
+-- create table Director with specific attributes as shown in E/R schema for Problem 1
+DROP TABLE IF EXISTS Director CASCADE;
+CREATE TABLE Director (
+	nid char(10),
+	name varchar(128),
+	birthYear int,
+	deathYear int);
+
+-- create table StarsIn with specific attributes as shown in E/R schema for Problem 1
+DROP TABLE IF EXISTS StarsIn CASCADE;
+CREATE TABLE StarsIn (
+	nid char(10),
+	tid char(10));
+
+-- create table Actor with specific attributes as shown in E/R schema for Problem 1
+DROP TABLE IF EXISTS Actor CASCADE;
+CREATE TABLE Actor (
+	nid char(10),
+	name varchar(128),
+	birthYear int,
+	deathYear int);
+
+-- Problem 1 (c)
+
+-- here we join Titles and Ratings where Titles.tid=Ratings.tid
+-- then make sure to insert only those titles where ttype='movie'
+-- and number of votes for that movie num_votes >= 10000
+-- then do descending sort and pick top 5000 movies from the join result
+-- runtime: 3s
+INSERT INTO Movie (
+    SELECT DISTINCT
+        t.tid,
+        t.primaryTitle AS title, 
+        t.startYear AS year,
+        t.runtimeMinutes AS length,
+        r.avg_rating AS rating
+    FROM Titles AS t 
+    JOIN Ratings AS r ON t.tid = r.tid
+    WHERE t.ttype = 'movie' AND r.num_votes >= 10000
+    ORDER BY r.avg_rating DESC 
+    LIMIT 5000
+);
+
+-- here we join Persons and Principals where Persons.nid=Principals.nid
+-- and then pick only those people whose Principals.category='actor' or Principals.category='actress'
+-- and whose Principals.tid in Movie
+-- we could not do that without the join, since Principals does not contain person's data, but Persons does
+-- runtime: 62s
+INSERT INTO Actor (
+    SELECT DISTINCT 
+        p1.nid, 
+        p1.primaryName AS name,
+        p1.birthYear,
+        p1.deathYear
+    FROM Persons AS p1
+    JOIN Principals AS p2 ON p1.nid = p2.nid
+    WHERE 
+		(p2.category = 'actor' OR p2.category = 'actress') 
+		AND 
+		p2.tid IN (SELECT tid FROM Movie)
+);
+
+-- same steps here as in Actor
+-- but Principals.category='director'
+-- runtime: 54s
+INSERT INTO Director (
+    SELECT DISTINCT 
+        p1.nid, 
+        p1.primaryName AS name,
+        p1.birthYear,
+        p1.deathYear
+    FROM Persons AS p1
+    JOIN Principals AS p2 ON p1.nid = p2.nid
+    WHERE
+        p2.category = 'director'
+        AND 
+		p2.tid IN (SELECT tid FROM Movie)
+);
+
+-- here we select only those people whose Principals.category='director
+-- and Principals.tid in Movie
+-- Directs might contain duplicate nid or tid, but no duplicate combinations of nid and tid
+-- runtime: 9s
+INSERT INTO Directs (
+    SELECT DISTINCT 
+        nid, 
+        tid
+    FROM Principals
+    WHERE
+        category = 'director'
+        AND 
+		tid IN (SELECT tid FROM Movie)
+);
+
+-- here we select only those people whose Principals.category='actor' or Principals.category='actress'
+-- and Principals.tid in Movie
+-- StarsIn migth contain duplicate nid or tid, but no duplicate combinations of nid and tid
+-- runtime: 12s
+INSERT INTO StarsIn (
+    SELECT DISTINCT 
+        nid, 
+        tid
+    FROM Principals
+    WHERE
+        (category = 'actor' OR category='actress')
+        AND 
+		tid IN (SELECT tid FROM Movie)
+);
+
+-- check that Movie has only unique tid
+-- runtime: <1s
+SELECT Movie.tid, COUNT(*)
+FROM Movie
+GROUP BY Movie.tid
+HAVING COUNT(*) > 1;
+
+-- check that Actor has only unique nid
+-- runtime: <1s
+SELECT Actor.nid, COUNT(*)
+FROM Actor
+GROUP BY Actor.nid
+HAVING COUNT(*) > 1;
+
+-- check that Director has only unique nid
+-- runtime: <1s
+SELECT Director.nid, COUNT(*)
+FROM Director
+GROUP BY Director.nid
+HAVING COUNT(*) > 1;
+
+-- Problem 1 (d)
+
+-- 1) Movie: 
+--	  	Non-trivial FDs: 
+--			{tid} -> {title, year, length, rating}
+--			{title, year} -> {length, rating}
+--			plus those derivable from the axioms
+-- 		Keys: 
+--			{tid} 
+--			{title, year}
+--		Normal Form: BCNF, since: 
+--			1NF - all attributes are atomic (true)
+--			2NF - for every non-trivial FD X -> Y it holds that X is not a proper subset of key of Movie (true)
+--			3NF - for every non-trivial FD X -> Y it holds that X is a superkey of Movie (true)
+--			BCNF - for every non-trivial FD X -> Y it holds that X is a superkey of Movie (true)
+-- 2) Director:
+--	  	Non-trivial FDs: 
+--			{nid} -> {name, birthYear, deathYear}
+--			plus those derivable from the axioms
+-- 		Keys: 
+--			{nid}
+--		Normal Form: BCNF
+-- 3) Actor: 
+--	  	Non-trivial FDs: 
+--			{nid} -> {name, birthYear, deathYear}
+--			plus those derivable from the axioms
+-- 		Keys: 
+--			{nid}
+--		Normal Form: BCNF 
+-- 4) Directs:
+--	  	Non-trivial FD: None
+-- 		Keys: 
+--			{nid, tid}
+--		Normal Form: BCNF 
+-- 5) StarsIn: 
+--	  	Non-trivial FD: None
+-- 		Keys: 
+--			{nid, tid}
+--		Normal Form: BCNF 

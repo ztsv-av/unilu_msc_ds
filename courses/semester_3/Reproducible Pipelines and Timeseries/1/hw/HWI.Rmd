@@ -1,0 +1,125 @@
+---
+title: "HW 1"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+## Homework 1 - instructions
+
+For your first homework assignment, find a time series and plot it. Submit your plot to me. I will give you feedback *only if* your series contains anomalies that cannot be handled with the methods we have learned in class. You will analyze the series in your future homework assignments.
+
+Please modify the notebook below:
+
+  - Replace the example series with your chosen series.
+  - Code and Markdown cells that need to be adjusted are in <span style="color:green">green</span>.
+  - Save the notebook file as 'HW1_[your last name here].rmd' (e.g. HW1_sivec.rmd).
+  -  Name the data file 'data_[your last name here].xls' (e.g. data_sivec.xls).
+ 
+Submission:
+
+
+  -  Submit both, the notebook and the data file (e.g. HW1_sivec.rmd \& data_sivec.xls).
+
+**Submitt via email:vasja.sivec@uni.lu by 1.Oct.2023**
+
+
+*Suggested sources*: 
+
+
+https://statistiques.public.lu/en.html
+
+    Eurostat - Statistical office of the EU features numerous series on 
+    economy, finance, population, industry, environment,...
+
+https://ec.europa.eu/eurostat/web/main/data/database  
+
+    ECB SDW - European Central Bank data data on interest rates, loans, 
+    exchange rates, financial corporations,... for european countries
+
+https://sdw.ecb.europa.eu/
+
+    World Bank - Global development data (rGDP, population, social 
+    conditions,...) for almost all the countries in the world. 
+
+https://data.worldbank.org/
+
+    IMF - International Monetary Fund data features data on economic 
+    and financial conditions for most countries of the world
+
+https://www.imf.org/en/Data
+
+    FRED data Federal Reserve Bank of St. Louis - go-to source for any 
+    data on socio-economic conditions in the US
+
+https://fred.stlouisfed.org/ 
+
+    Penn world data University of Groningen development statistics
+
+https://www.rug.nl/ggdc/productivity/pwt/?lang=en
+
+
+Feel free to explore other sources! This could be the statistical office of your own country or a time series related to your hobby. It is advisable to select a series that features a sufficient number of observations, say at least 50.
+
+## HW1 - hand in part
+
+### Source and description
+
+Full link or name of the provider: <span style="color:green">https: //fred.stlouisfed.org/series/RGDPNALUA666NRUG</span>
+
+Series code: <span style="color:green">RGDPNALUA666NRUG</span>
+
+Date of access: <span style="color:green">Oct. 12, 2022</span>
+
+Description: <span style="color:green">Luxembourg gross domestic product at constant prices. Not seasonally adjusted.</span>
+
+### Characteristics
+
+Periodicity or frequency:<span style="color:green"> Annual</span> \
+Time span:<span style="color:green"> 1950-2019</span> \
+Number of observations:<span style="color:green"> 70</span> 
+
+
+Plot the series and corresponding correlation and autocorrelation functions. Please plot also the first differences of the series. <span style="color:green">Modify the code below</span> so that it imports and plots your series.
+
+```{r IMPORT}
+# supress warnings
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+# IMPORT DATA
+# Load required packages
+library(readxl)
+library(ggplot2)
+library(forecast)
+library(ggpubr)
+
+
+# Set working directory
+setwd('C:\\Users\\xct385\\Desktop\\DS ws\\MADS_win23\\PART_1_intro_uni_ts\\Ex_models_R')
+
+# Import data
+df <- read_excel('rgdp_2021q4.xlsx')
+y  <- ts(df[,"PIB_R_SA"],start=c(sub("*Q.","",df[1,"date"]),sub(".*Q","",df[1,"date"])),frequency=4)
+```
+
+```{r FIGURE 1}
+# FIGURE 1 :  level of the series
+plot_y  <- ggplot(data.frame(x = time(y), y = as.numeric(y)), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "FIG 1 - LEVEL")
+plot_ac  <- ggAcf(y,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y, lag.max = 10) + labs(title="PACF")
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+```
+
+```{r FIGURE 2}
+# FIGURE 2 :  1st diff of the series
+y_gr <- c(100*diff(log(y)))
+x    <- time(y)
+plot_y  <- ggplot(data.frame(x = x[2:length(x)], y = y_gr), aes(x = x, y = y)) + 
+  geom_line() + 
+  labs(title = "FIG 2 - DIFF")
+plot_ac  <- ggAcf(y_gr,lag.max = 10) + labs(title="ACF")
+plot_pac <- ggPacf(y_gr, lag.max = 10) + labs(title="PACF")
+# Display plot
+ggarrange(plot_y,plot_ac,plot_pac,ncol = 3)
+```

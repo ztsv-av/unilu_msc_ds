@@ -1,0 +1,642 @@
+Problem 1
+
+IMPORTANT: Make sure to remove Combiner class in both HadoopWordCount.java and HadoopWordPairs.java
+           It breaks the sum value for each key emitted by the mappers.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+(a) (1) and (2)
+
+Here we work with HadoopWordCount.java.
+We modify the Mapper class, namely the Map function.
+The Reducer class remains the same.
+
+MODIFIED MAP FUNCTION:
+
+```
+@Override
+public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    
+    // lowercase everything
+    String line = value.toString().toLowerCase();
+    // split by everything that is not a-z (not a word) and not a number
+    String[] tokens = line.split("[^a-z0-9]+");
+    for (String token : tokens) {
+        // check that each work consists only of sequences of lower-case letters a-z, 
+        //     with a length of at least 5 letters and at most 25 letters
+        // OR
+        // check that each word is a number consisting only of sequences of digits 0-9, 
+        //     with a length of at least 2 digits and at most 12 digits.
+        if (token.matches("[a-z]{5,25}") || token.matches("[0-9]{2,12}")) {
+            word.set(token);
+            context.write(word, one);
+        }
+    }
+}
+```
+
+OUTPUT (the output of the file is very long, here we present only the head and tail for the file):
+
+```
+00      296
+000     5099
+0000    6
+00000   2
+0000000001      1
+00000111        1
+000019  1
+0001    9
+00010   1
+00015   2
+...
+zygotes 1
+zyklon  8
+zylom   1
+zymase  1
+zymogen 1
+zynoviy 1
+zyprexa 2
+zyraxes 2
+zysyshelp       3
+zythology       1
+```
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+(b) (1) 
+
+Here we work with HadoopWordCount.java. 
+We modify the Mapper class, namely the Map function.
+We also modify the Reducer class, namely the Reduce function.
+
+MODIFIED MAP FUNCTION:
+
+```
+@Override
+public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    
+    // lowercase everything
+    String line = value.toString().toLowerCase();
+    // split by everything that is not a-z (not a word)
+    String[] tokens = line.split("[^a-z]");
+    for (String token : tokens) {
+        // make sure that the length of the token is between 5-25
+        if (token.length() >= 5 && token.length() <= 25) {
+            word.set(token);
+            context.write(word, one);
+        }
+    }
+}
+```
+
+MODIFIED REDUCE FUNCTION:
+
+```
+@Override
+public void reduce(Text key, Iterable<IntWritable> values, Context context)
+        throws IOException, InterruptedException {
+    
+    int sum = 0;
+
+    for (IntWritable value : values)
+        sum += value.get();
+    
+    // output only words that occured exactly 1000 times
+    if (sum == 1000) {
+        context.write(key, new IntWritable(sum));
+    }
+}
+```
+
+OUTPUT:
+
+```
+philosophy      1000
+```
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+(b) (2) 
+
+Here we work with HadoopWordPairs.java. 
+We modify the Mapper class, namely the Map function.
+The Reducer class remains almost the same as in (b) (1),
+    but instead of sum=1000, we output those pairs, whose sum>=1000, 
+    since there are no pairs of words in subdirectory AA where the sum of occurances is exactly 1000.
+
+MODIFIED MAP FUNCTION:
+
+```
+@Override
+public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    // lowercase everything
+    String line = value.toString().toLowerCase();
+    // split by everything that is not a-z (not a word)
+    String[] tokens = line.split("[^a-z]");
+    for (String token : tokens) {
+        // make sure that the length of the token is between 5-25
+        if (token.length() >= 5 && token.length() <= 25) {
+            if (lastWord.getLength() > 0) {
+                pair.set(lastWord + ":" + token);
+                context.write(pair, one);
+            }
+            lastWord.set(token);
+        }
+    }
+}
+```
+
+OUTPUT:
+
+```
+curid:title     3030
+https:wikipedia 3030
+united:states   4027
+wikipedia:curid 3030
+```
+
+Note that to reduce the computational time we can make use of the A-Priori algorithm,
+    by taking the output of (b) (1) (making sure to use the condition on the sum sum>=1000 in this case)
+    and making another if condition on the mapper of (b) (2) to check if the current token
+    is in the output of the MapReduce operation from (b) (1).
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+(b) (3) 
+
+Here we work with HadoopWordCount.java. 
+The Mapper class remains the same as in (b) (1).
+We modify the Reducer class, namely we add PriorityQueue to the Reduce class and modify the Reduce function.
+
+MODIFIED REDUCE CLASS:
+
+```
+public static class Reduce extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+    // create a priority queue to keep track of top 100 words by occurance
+    // note that we use Comparator so that the priority queue compares right element in the pair <String, Integer> to store
+    //  values with the lowest count at the top of the queue
+    // 	and with the highest value at the bottom of the queue
+    private PriorityQueue<String[]> top100Words = new PriorityQueue<>(Comparator.comparingInt(arr -> Integer.parseInt(arr[1])));
+
+    @Override
+    public void reduce(Text key, Iterable<IntWritable> values, Context context)
+            throws IOException, InterruptedException {
+        
+        int sum = 0;
+
+        for (IntWritable value : values)
+            sum += value.get();
+
+        // add the current word and its count to the priority queue
+        top100Words.offer(new String[]{key.toString(), String.valueOf(sum)});
+
+        // if the size of the priority queue exceeds 100, remove the word with the lowest count
+        if (top100Words.size() > 100) {
+            top100Words.poll();
+        }
+    }
+
+    // called after all the reducers have finished processing their input
+    // it iterates over the PriorityQueue containing the top 100 words and emits them with their frequencies,
+    // 	starting with the word with the lowest frequency
+    protected void cleanup(Context context) throws IOException, InterruptedException {
+        // output the top 100 words
+        while (!top100Words.isEmpty()) {
+            String[] pair = top100Words.poll();
+            context.write(new Text(pair[0]), new IntWritable(Integer.parseInt(pair[1])));
+        }
+    }
+}
+```
+
+OUTPUT:
+
+```
+though  2962
+usually 3019
+curid   3030
+https   3042
+wikipedia       3051
+order   3088
+important       3092
+point   3101
+music   3140
+million 3161
+university      3164
+death   3221
+black   3226
+formula 3237
+international   3307
+great   3312
+public  3322
+water   3333
+still   3362
+power   3369
+began   3383
+french  3400
+period  3402
+small   3455
+using   3513
+series  3528
+english 3608
+population      3688
+within  3697
+among   3749
+according       3757
+group   3815
+another 3833
+general 3858
+following       3900
+around  3937
+language        3941
+church  3978
+different       3979
+modern  4052
+those   4083
+history 4158
+common  4175
+major   4234
+country 4235
+include 4261
+north   4287
+until   4344
+title   4348
+south   4508
+based   4527
+against 4552
+could   4651
+large   4653
+example 4685
+second  4698
+found   4730
+national        4738
+british 4784
+although        4804
+before  4910
+several 5196
+because 5449
+american        5520
+government      5536
+people  5585
+often   5674
+united  5726
+became  5732
+system  5987
+under   5987
+since   6119
+including       6185
+state   6236
+through 6243
+early   6298
+being   6356
+later   6455
+three   6457
+states  6566
+number  6628
+where   6705
+called  6866
+century 6950
+however 7548
+while   7602
+about   7618
+years   7662
+known   7777
+world   8326
+would   9117
+between 9482
+during  9596
+these   10631
+there   11310
+after   12281
+first   15715
+other   16703
+their   17895
+which   30269
+```
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+(b) (4) 
+
+Here we work with HadoopWordPairs.java.
+We modify the Mapper class.
+The Reducer class remains the same as in (b) (3).
+
+MODIFIED MAP FUNCTION:
+
+```
+@Override
+public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+
+    // lowercase everything
+    String line = value.toString().toLowerCase();
+    // split by everything that is not a-z (not a word) and not a number
+    String[] tokens = line.split("[^a-z0-9]+");
+    for (String token : tokens) {
+        // check if the token is a number
+        if (token.matches("[0-9]{2,12}")) {
+            // if the previous token is not empty and it is a word
+            if (lastToken.getLength() > 0 && lastToken.toString().matches("[a-z]{5,25}")) {
+                // emit the pair with the number as the first token and the word as the second token
+                pair.set(token + ":" + lastToken);
+                context.write(pair, one);
+            }
+        // if the token is not a number, we check if it is a word
+        } else if (token.matches("[a-z]{5,25}")) {
+            // if the previous token is not empty and it is a number
+            if (lastToken.getLength() > 0 && lastToken.toString().matches("[0-9]{2,12}")) {
+                // emit the pair with the number as the first token and the word as the second token
+                pair.set(lastToken + ":" + token);
+                context.write(pair, one);
+            }
+        }
+        // update last token
+        lastToken.set(token);
+    }
+}
+```
+
+OUTPUT:
+
+```
+20:formula      39
+2011:march      39
+20:percent      39
+17:april        39
+2010:november   39
+25:about        39
+15:december     39
+14:april        39
+17:january      39
+2009:march      39
+2014:december   40
+2012:december   40
+23:formula      40
+15:november     40
+2013:january    40
+200:about       41
+2012:march      41
+2014:october    41
+30:september    41
+18:formula      41
+7800:atari      41
+2008:december   41
+21:september    41
+2011:september  41
+100:every       41
+2003:since      41
+16:formula      42
+2001:since      42
+50:percent      42
+2015:january    42
+10:percent      43
+34:formula      43
+200:billboard   43
+31:march        43
+15:september    43
+2001:census     43
+18:years        43
+70:about        43
+000:copies      43
+2009:september  43
+2007:november   44
+2007:january    44
+19:august       44
+2002:since      44
+13:formula      44
+500:amiga       44
+000:members     44
+15:apollo       44
+11:formula      44
+2011:january    45
+25:march        46
+000:soldiers    46
+17:apollo       46
+2011:december   46
+16:apollo       46
+2013:march      46
+31:october      47
+000:troops      47
+15:about        47
+10:december     47
+000:inhabitants 48
+2010:october    49
+17:formula      50
+21:formula      50
+25:million      50
+15:formula      51
+10:formula      51
+2000:since      52
+12:years        52
+20:million      54
+40:about        54
+11:attacks      56
+25:december     58
+13:apollo       60
+25:years        60
+40:years        61
+100:million     63
+12:formula      65
+2600:atari      66
+15:years        66
+2011:census     66
+100:about       66
+50:years        67
+11:apollo       68
+30:about        70
+100:years       71
+24:hours        72
+50:about        72
+2010:census     72
+10:million      72
+65:years        78
+31:december     83
+30:years        86
+20:about        90
+10:years        95
+20:years        107
+10:about        134
+11:september    145
+000:years       216
+000:people      289
+```
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+(c) 
+
+In order to run 4 different MapReduce scripts on increasing number of subsets we had to create a .sh script (code below).
+This script iterates through each subset (folders=("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK"))
+    starting from ["AA"], ["AA" "AB"], ..., up until ["AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK"].
+On each iteration, it creates a new data folder and copies files from each of the current subfolders into the new data folder
+    making sure that the files do not overwrite each other by appending subset name to the file name before copy
+    (function copy_and_rename_files()).
+For example, when algorithm is on the ["AA" "AB" "AC"] step, 
+    copy_and_rename_files() function will create a folder called "AA_AB_AC" 
+    which will contain files from "AA", "AB" and "AC" articles.
+Then, it runs each MapReduce algorithm on the aggregated data, recording the starting time beforehand, and, after the MapReduce is finished,
+    it records the elapsed time by writing the value of the 'elapsed_time' variable 
+    with the name of the folder where the data is stored into 'elapsed_time.txt' file.
+For example, when algorithm is on the ["AA" "AB" "AC"] step,
+    run_hadoop_job() will pass "AA_AB_AC" folder name to the hadoop call
+    which will contain all the articles from "AA", "AB", "AC" folders
+    and, after hadoop call is finished, it will append the following line to the "elapsed_time.txt" file:
+    "AA_AB_AC: 54930 milliseconds".
+Below you will find .sh code and elapsed_time.txt content after running it on all of the Wikipedia articles.
+
+Note: The .sh script was run locally on a laptop with 16GB RAM and Intel i5-8365U 1.60GHz 1.90GHz CPU.
+      Total time it took to run the whole job: 3702634ms (1 hour, 1 minute 42 seconds 634 ms).
+
+```
+nano problem_1.sh
+```
+
+```
+#!/bin/bash
+
+# function to copy files from specified subfolders to a new directory and modify filenames
+copy_and_rename_files() {
+    target_dir="$1"
+    shift
+    subfolders=("$@")
+    for subfolder in "${subfolders[@]}"; do
+        for file in "enwiki-articles/$subfolder"/wiki_*; do
+            filename=$(basename "$file")
+	    cp "$file" "$target_dir/${subfolder}_${filename}"
+        done
+    done
+    echo "Finished copy $target_dir"
+}
+
+# function to run Hadoop job for specified subfolders and record elapsed time for all 4 questions from part (b)
+run_hadoop_job() {
+    start_time=$(date +%s%3N)
+    hadoop jar HadoopWordCountb1.jar HadoopWordCountb1 ~/"$1" ~/hadoop-output-b1/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "part (1): $1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished 1 $1"
+
+    start_time=$(date +%s%3N)
+    hadoop jar HadoopWordPairsb2.jar HadoopWordPairsb2 ~/"$1" ~/hadoop-output-b2/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "part (2): $1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished 2 $1"
+
+    start_time=$(date +%s%3N)
+    hadoop jar HadoopWordCountb3.jar HadoopWordCountb3 ~/"$1" ~/hadoop-output-b3/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "part (3): $1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished 3 $1"
+
+    start_time=$(date +%s%3N)
+    hadoop jar HadoopWordPairsb4.jar HadoopWordPairsb4 ~/"$1" ~/hadoop-output-b4/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "part (4): $1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished 4 $1"
+}
+
+# main execution ("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK")
+folders=("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK")
+output_file="problem-1_elapsed-time.txt"
+echo "Elapsed Times:" > "$output_file"
+for ((i = 0; i < ${#folders[@]}; i++)); do
+    current_folders=("${folders[@]:0:i+1}")
+    dir_name=$(IFS=_; echo "${current_folders[*]}")
+    mkdir -p "$dir_name"
+    copy_and_rename_files "$dir_name" "${current_folders[@]}"
+    run_hadoop_job "$dir_name" "$output_file"
+done
+```
+
+```
+chmod +x problem_1.sh
+./problem_1.sh
+```
+
+OUTPUT of the "problem-1_elapsed-time.txt" file:
+
+```
+Elapsed Times:
+part (1): AA: 13383 milliseconds
+part (2): AA: 12354 milliseconds
+part (3): AA: 13356 milliseconds
+part (4): AA: 13642 milliseconds
+part (1): AA_AB: 27526 milliseconds
+part (2): AA_AB: 26585 milliseconds
+part (3): AA_AB: 28747 milliseconds
+part (4): AA_AB: 24534 milliseconds
+part (1): AA_AB_AC: 43486 milliseconds
+part (2): AA_AB_AC: 42472 milliseconds
+part (3): AA_AB_AC: 48972 milliseconds
+part (4): AA_AB_AC: 38462 milliseconds
+part (1): AA_AB_AC_AD: 56509 milliseconds
+part (2): AA_AB_AC_AD: 52574 milliseconds
+part (3): AA_AB_AC_AD: 56485 milliseconds
+part (4): AA_AB_AC_AD: 51559 milliseconds
+part (1): AA_AB_AC_AD_AE: 70948 milliseconds
+part (2): AA_AB_AC_AD_AE: 70691 milliseconds
+part (3): AA_AB_AC_AD_AE: 70758 milliseconds
+part (4): AA_AB_AC_AD_AE: 58785 milliseconds
+part (1): AA_AB_AC_AD_AE_AF: 88000 milliseconds
+part (2): AA_AB_AC_AD_AE_AF: 85746 milliseconds
+part (3): AA_AB_AC_AD_AE_AF: 87916 milliseconds
+part (4): AA_AB_AC_AD_AE_AF: 72717 milliseconds
+part (1): AA_AB_AC_AD_AE_AF_AG: 104117 milliseconds
+part (2): AA_AB_AC_AD_AE_AF_AG: 103137 milliseconds
+part (3): AA_AB_AC_AD_AE_AF_AG: 105882 milliseconds
+part (4): AA_AB_AC_AD_AE_AF_AG: 87883 milliseconds
+part (1): AA_AB_AC_AD_AE_AF_AG_AH: 119946 milliseconds
+part (2): AA_AB_AC_AD_AE_AF_AG_AH: 117051 milliseconds
+part (3): AA_AB_AC_AD_AE_AF_AG_AH: 122838 milliseconds
+part (4): AA_AB_AC_AD_AE_AF_AG_AH: 94057 milliseconds
+part (1): AA_AB_AC_AD_AE_AF_AG_AH_AI: 134888 milliseconds
+part (2): AA_AB_AC_AD_AE_AF_AG_AH_AI: 132139 milliseconds
+part (3): AA_AB_AC_AD_AE_AF_AG_AH_AI: 136947 milliseconds
+part (4): AA_AB_AC_AD_AE_AF_AG_AH_AI: 106147 milliseconds
+part (1): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ: 150414 milliseconds
+part (2): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ: 146930 milliseconds
+part (3): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ: 152269 milliseconds
+part (4): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ: 121454 milliseconds
+part (1): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ_AK: 167111 milliseconds
+part (2): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ_AK: 156237 milliseconds
+part (3): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ_AK: 159152 milliseconds
+part (4): AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ_AK: 127828 milliseconds
+```
+
+If we plot the running times for each part, we can observe linear increase in time,
+    as we increase the number of files, meaning linear scalability.
+
+Python script to plot the relationship between the running times and the number of files:
+```
+import matplotlib.pyplot as plt
+
+data = {
+    'b_1': [13383, 27526, 43486, 56509, 70948, 88000, 104117, 119946, 134888, 150414, 167111],
+    'b_2': [12354, 26585, 42472, 52574, 70691, 85746, 103137, 117051, 132139, 146930, 156237],
+    'b_3': [13356, 28747, 48972, 56485, 70758, 87916, 105882, 122838, 136947, 152269, 159152],
+    'b_4': [13642, 24534, 38462, 51559, 58785, 72717, 87883, 94057, 106147, 121454, 127828]
+}
+
+num_files = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100]
+
+plt.figure(figsize=(10, 6))
+
+for b, timings in data.items():
+    plt.plot(timings, num_files, label=b)
+
+plt.xlabel('Milliseconds')
+plt.ylabel('Number of Files')
+plt.title('Execution Time vs. Number of Files')
+plt.legend()
+plt.grid(True)
+plt.show()
+```

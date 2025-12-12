@@ -1,0 +1,1152 @@
+Considering all features:
+
+Similarity Matrix for file 1:
+          0         1         2
+0  0.119322  0.497260  0.005040
+1  0.080525  0.345748  0.003456
+2  0.017990  0.101726  0.000000
+
+Overall Similarity for file 1: 0.3903555396297342
+
+Centroid Euclidean Distance Matrix for file 1:
+          0         1          2
+0  4.092259  2.034382  16.810949
+1  4.713511  2.701600  16.945167
+2  9.515172  8.044827  19.020262
+
+Centroid Pearson Correlation Matrix for file 1:
+          0         1         2
+0  0.115456 -0.113153  0.002941
+1 -0.018086  0.019308 -0.010701
+2 -0.143729  0.138798  0.009702
+Similarity Matrix for file 2:
+          0         1         2
+0  0.106832  0.436710  0.005106
+1  0.078528  0.311078  0.005116
+2  0.104261  0.203029  0.007488
+
+Overall Similarity for file 2: 0.4193830132528777
+
+Centroid Euclidean Distance Matrix for file 2:
+          0         1          2
+0  4.585973  2.787239  14.838787
+1  4.686359  2.753048  14.849875
+2  4.847531  3.523054  14.860551
+
+Centroid Pearson Correlation Matrix for file 2:
+          0         1         2
+0 -0.005867  0.007638 -0.010977
+1 -0.046612  0.043672  0.008201
+2  0.063571 -0.063225  0.009365
+Similarity Matrix for file 3:
+          0         1         2
+0  0.109981  0.418741  0.005543
+1  0.085694  0.292462  0.003927
+2  0.097512  0.239031  0.007823
+
+Overall Similarity for file 3: 0.42023771112237124
+
+Centroid Euclidean Distance Matrix for file 3:
+          0         1          2
+0  4.582553  2.894849  14.529493
+1  4.646116  2.795781  14.703564
+2  4.699239  3.229999  14.512844
+
+Centroid Pearson Correlation Matrix for file 3:
+          0         1         2
+0  0.003060 -0.004826  0.010656
+1 -0.042931  0.050788 -0.052396
+2  0.039827 -0.045186  0.037528
+Similarity Matrix for file 4:
+          0         1         2
+0  0.118198  0.307862  0.007242
+1  0.027595  0.218056  0.000052
+2  0.124050  0.421324  0.006706
+
+Overall Similarity for file 4: 0.4103615348279593
+
+Centroid Euclidean Distance Matrix for file 4:
+          0         1          2
+0  4.784979  3.532611  14.757052
+1  5.774553  3.740802  15.208625
+2  4.400292  2.730720  14.738492
+
+Centroid Pearson Correlation Matrix for file 4:
+          0         1         2
+0  0.075125 -0.075107  0.012530
+1 -0.183100  0.172258  0.031309
+2  0.034574 -0.028384 -0.029641
+Similarity Matrix for file 5:
+          0         1         2
+0  0.113208  0.544266  0.004451
+1  0.111527  0.382713  0.005945
+2  0.007037  0.000767  0.106350
+
+Overall Similarity for file 5: 0.4254213145659033
+
+Centroid Euclidean Distance Matrix for file 5:
+           0          1          2
+0   4.094087   2.088680  14.272066
+1   4.592982   2.963788  14.305634
+2  29.512504  29.728031  26.987849
+
+Centroid Pearson Correlation Matrix for file 5:
+          0         1         2
+0 -0.009634  0.018246 -0.051090
+1  0.005297 -0.010149  0.028759
+2  0.075348 -0.140676  0.387912
+Similarity Matrix for file 6:
+          0         1         2
+0  0.114877  0.324297  0.007123
+1  0.030061  0.246320  0.000319
+2  0.140702  0.376506  0.005907
+
+Overall Similarity for file 6: 0.4153703104893507
+
+Centroid Euclidean Distance Matrix for file 6:
+          0         1          2
+0  4.301312  2.759187  14.605425
+1  6.182161  4.081744  15.427766
+2  3.849551  2.392582  14.554871
+
+Centroid Pearson Correlation Matrix for file 6:
+          0         1         2
+0  0.054501 -0.054056  0.005389
+1 -0.241086  0.237841 -0.015669
+2  0.172257 -0.169656  0.009386
+Similarity Matrix for file 7:
+          0         1         2
+0  0.133311  0.798673  0.005446
+1  0.024010  0.044985  0.003032
+2  0.024992  0.036640  0.003667
+
+Overall Similarity for file 7: 0.3582522122545855
+
+Centroid Euclidean Distance Matrix for file 7:
+           0          1          2
+0   3.559958   0.842850  14.176983
+1  11.754443  11.017828  17.998023
+2   9.797167   9.165307  16.853012
+
+Centroid Pearson Correlation Matrix for file 7:
+          0         1         2
+0  0.069435 -0.075358  0.048446
+1 -0.075815  0.081049 -0.044991
+2 -0.007998  0.010434 -0.016830
+Similarity Matrix for file 8:
+          0         1         2
+0  0.156730  0.353660  0.006637
+1  0.114315  0.324071  0.007366
+2  0.030321  0.267927  0.000539
+
+Overall Similarity for file 8: 0.4205218322136999
+
+Centroid Euclidean Distance Matrix for file 8:
+          0         1          2
+0  3.696478  2.475405  14.065916
+1  4.296424  2.799058  14.149135
+2  6.035460  3.879113  14.919889
+
+Centroid Pearson Correlation Matrix for file 8:
+          0         1         2
+0  0.224167 -0.221625  0.017612
+1  0.038608 -0.038002  0.001959
+2 -0.267308  0.264104 -0.019900
+Similarity Matrix for file 9:
+          0         1         2
+0  0.155957  0.353183  0.006712
+1  0.115244  0.320493  0.008070
+2  0.032336  0.271929  0.000183
+
+Overall Similarity for file 9: 0.4213691138535138
+
+Centroid Euclidean Distance Matrix for file 9:
+          0         1          2
+0  3.696766  2.485271  13.873029
+1  4.289373  2.811165  13.945451
+2  5.985870  3.836296  14.754009
+
+Centroid Pearson Correlation Matrix for file 9:
+          0         1         2
+0  0.221603 -0.219526  0.020960
+1  0.038923 -0.038995  0.006434
+2 -0.263785  0.261754 -0.027733
+Similarity Matrix for file 10:
+          0         1         2
+0  0.226345  0.267031  0.012867
+1  0.102764  0.277658  0.007640
+2  0.046093  0.398555  0.000183
+
+Overall Similarity for file 10: 0.44637892794172246
+
+Centroid Euclidean Distance Matrix for file 10:
+          0         1          2
+0  3.414001  3.181491  12.504150
+1  5.302441  3.861121  13.098057
+2  4.764096  2.496016  13.078110
+
+Centroid Pearson Correlation Matrix for file 10:
+          0         1         2
+0  0.374488 -0.377615  0.078601
+1 -0.120186  0.122817 -0.035477
+2 -0.270077  0.270258 -0.043625
+Similarity Matrix for file 11:
+          0         1         2
+0  0.017995  0.038538  0.002870
+1  0.081446  0.621629  0.003403
+2  0.233236  0.263396  0.012581
+
+Overall Similarity for file 11: 0.42503115162359184
+
+Centroid Euclidean Distance Matrix for file 11:
+           0          1          2
+0  13.056772  12.289312  17.820535
+1   4.159202   1.454327  12.936602
+2   3.372906   3.181542  12.658511
+
+Centroid Pearson Correlation Matrix for file 11:
+          0         1         2
+0 -0.124178  0.130138 -0.057366
+1 -0.353818  0.353876 -0.055349
+2  0.392692 -0.395417  0.078426
+Similarity Matrix for file 12:
+          0         1         2
+0  0.101603  0.258287  0.007473
+1  0.033550  0.390638  0.000173
+2  0.220414  0.295990  0.010772
+
+Overall Similarity for file 12: 0.4396335339699917
+
+Centroid Euclidean Distance Matrix for file 12:
+          0         1          2
+0  5.412623  4.015329  13.658695
+1  4.942071  2.500149  13.652463
+2  3.403016  2.988002  13.100363
+
+Centroid Pearson Correlation Matrix for file 12:
+          0         1         2
+0 -0.095153  0.096756 -0.024784
+1 -0.318381  0.317458 -0.042387
+2  0.369890 -0.370820  0.062159
+Similarity Matrix for file 13:
+          0         1         2
+0  0.035163  0.390335  0.000062
+1  0.102948  0.267142  0.007501
+2  0.220669  0.287693  0.011062
+
+Overall Similarity for file 13: 0.4408580944071923
+
+Centroid Euclidean Distance Matrix for file 13:
+          0         1          2
+0  4.919900  2.489910  13.620313
+1  5.339764  3.932640  13.596362
+2  3.416732  3.038425  13.056897
+
+Centroid Pearson Correlation Matrix for file 13:
+          0         1         2
+0 -0.315888  0.315443 -0.045281
+1 -0.094463  0.096055 -0.024643
+2  0.370255 -0.371615  0.065187
+Similarity Matrix for file 14:
+          0         1         2
+0  0.036704  0.337271  0.004955
+1  0.101287  0.252540  0.007302
+2  0.188148  0.352887  0.006415
+
+Overall Similarity for file 14: 0.4291693997822396
+
+Centroid Euclidean Distance Matrix for file 14:
+          0         1          2
+0  4.577172  2.277192  13.569982
+1  6.172437  4.726441  14.186709
+2  3.784019  3.101722  13.698904
+
+Centroid Pearson Correlation Matrix for file 14:
+          0         1         2
+0 -0.232589  0.209550  0.105196
+1 -0.141711  0.142342 -0.023915
+2  0.268290 -0.256700 -0.031435
+Similarity Matrix for file 15:
+          0         1         2
+0  0.097732  0.292270  0.005691
+1  0.134357  0.594379  0.006171
+2  0.016738  0.030234  0.002815
+
+Overall Similarity for file 15: 0.393462461163041
+
+Centroid Euclidean Distance Matrix for file 15:
+           0          1          2
+0   5.608971   4.084110  14.337955
+1   3.778235   2.176104  13.910742
+2  14.645870  13.940083  19.668151
+
+Centroid Pearson Correlation Matrix for file 15:
+          0         1         2
+0 -0.100852  0.096887  0.008882
+1  0.121516 -0.119501  0.005725
+2 -0.101158  0.106717 -0.047817
+Similarity Matrix for file 16:
+          0         1         2
+0  0.024545  0.036649  0.005184
+1  0.096775  0.304303  0.005464
+2  0.130641  0.580504  0.006055
+
+Overall Similarity for file 16: 0.3967061282807778
+
+Centroid Euclidean Distance Matrix for file 16:
+          0         1          2
+0  9.951850  9.304757  16.654104
+1  5.654741  4.138977  14.498092
+2  3.840914  2.164821  14.068218
+
+Centroid Pearson Correlation Matrix for file 16:
+          0         1         2
+0 -0.022196  0.023723 -0.012243
+1 -0.099070  0.096795 -0.001096
+2  0.103878 -0.102005  0.004168
+Similarity Matrix for file 17:
+          0         1         2
+0  0.016978  0.032424  0.002822
+1  0.142695  0.579284  0.006576
+2  0.098285  0.301918  0.005818
+
+Overall Similarity for file 17: 0.3955998817565372
+
+Centroid Euclidean Distance Matrix for file 17:
+           0          1          2
+0  14.250318  13.491819  19.166371
+1   3.672492   2.235578  13.590967
+2   5.565365   3.938291  14.031922
+
+Centroid Pearson Correlation Matrix for file 17:
+          0         1         2
+0 -0.121163  0.127296 -0.052968
+1  0.162258 -0.160791  0.013234
+2 -0.138062  0.134446  0.002855
+Similarity Matrix for file 18:
+          0         1         2
+0  0.161224  0.168520  0.009568
+1  0.101645  0.249611  0.007590
+2  0.099049  0.520808  0.003694
+
+Overall Similarity for file 18: 0.44056948200646384
+
+Centroid Euclidean Distance Matrix for file 18:
+          0         1          2
+0  4.221693  3.783011  13.574256
+1  5.456823  4.094974  13.871394
+2  4.031475  1.844949  13.542340
+
+Centroid Pearson Correlation Matrix for file 18:
+          0         1         2
+0  0.249872 -0.249685  0.035682
+1 -0.084039  0.084613 -0.016124
+2 -0.095683  0.094899 -0.009055
+Similarity Matrix for file 19:
+          0         1         2
+0  0.217830  0.306993  0.010611
+1  0.078516  0.581131  0.003528
+2  0.017561  0.036507  0.002868
+
+Overall Similarity for file 19: 0.41851515115839066
+
+Centroid Euclidean Distance Matrix for file 19:
+           0          1          2
+0   3.392339   2.935100  12.959315
+1   4.243545   1.631162  13.209329
+2  13.342003  12.597188  18.202623
+
+Centroid Pearson Correlation Matrix for file 19:
+          0         1         2
+0  0.354254 -0.355099  0.058706
+1 -0.323167  0.321596 -0.038496
+2 -0.117956  0.123535 -0.053611
+Similarity Matrix for file 20:
+          0         1         2
+0  0.100596  0.309247  0.006262
+1  0.154703  0.562604  0.006460
+2  0.017642  0.036721  0.002870
+
+Overall Similarity for file 20: 0.3990351535531897
+
+Centroid Euclidean Distance Matrix for file 20:
+           0          1          2
+0   5.036557   3.369684  13.413633
+1   3.525149   2.018102  13.022640
+2  13.323251  12.576213  18.182403
+
+Centroid Pearson Correlation Matrix for file 20:
+          0         1         2
+0 -0.127443  0.125827 -0.008732
+1  0.158918 -0.159397  0.026872
+2 -0.117748  0.123210 -0.052648
+
+------------------------------------------------
+
+Considering only categorical features:
+
+Similarity Matrix for file 1:
+          0         1         2
+0  0.119685  0.424406  0.005267
+1  0.085870  0.421571  0.003511
+2  0.017990  0.101726  0.000000
+
+Overall Similarity for file 1: 0.3933413621461315
+
+Centroid Euclidean Distance Matrix for file 1:
+          0         1          2
+0  3.203603  2.023954  15.804415
+1  3.645950  2.110121  15.915068
+2  9.122730  8.042834  18.109188
+
+Centroid Pearson Correlation Matrix for file 1:
+          0         1         2
+0  0.139400 -0.139720  0.004519
+1 -0.047892  0.051572 -0.019384
+2 -0.110963  0.106652  0.019210
+Similarity Matrix for file 2:
+          0         1         2
+0  0.108063  0.380738  0.005391
+1  0.107037  0.500806  0.006099
+2  0.030775  0.056376  0.003089
+
+Overall Similarity for file 2: 0.3994581871167797
+
+Centroid Euclidean Distance Matrix for file 2:
+           0          1          2
+0   3.963848   2.912394  14.344932
+1   3.662645   2.405451  14.222220
+2  10.598273  10.058212  17.454086
+
+Centroid Pearson Correlation Matrix for file 2:
+          0         1         2
+0  0.044003 -0.047590  0.017148
+1  0.004075 -0.007114  0.013065
+2 -0.103808  0.118611 -0.067345
+Similarity Matrix for file 3:
+          0         1         2
+0  0.116779  0.312037  0.007289
+1  0.028815  0.231364  0.000067
+2  0.129767  0.403947  0.007080
+
+Overall Similarity for file 3: 0.41238238255905735
+
+Centroid Euclidean Distance Matrix for file 3:
+          0         1          2
+0  4.256724  3.503671  14.151008
+1  5.098989  3.657185  14.504132
+2  3.708684  2.764983  14.082272
+
+Centroid Pearson Correlation Matrix for file 3:
+          0         1         2
+0  0.030862 -0.028708 -0.008159
+1 -0.125525  0.110086  0.062066
+2  0.044044 -0.037055 -0.028574
+Similarity Matrix for file 4:
+          0         1         2
+0  0.118198  0.307862  0.007242
+1  0.027595  0.218056  0.000052
+2  0.124050  0.421324  0.006706
+
+Overall Similarity for file 4: 0.4103615348279593
+
+Centroid Euclidean Distance Matrix for file 4:
+          0         1          2
+0  4.203661  3.507643  14.303710
+1  5.170729  3.735437  14.701525
+2  3.748257  2.702743  14.268403
+
+Centroid Pearson Correlation Matrix for file 4:
+          0         1         2
+0  0.062068 -0.062119  0.002220
+1 -0.121322  0.105757  0.063092
+2  0.009896 -0.001133 -0.037401
+Similarity Matrix for file 5:
+          0         1         2
+0  0.110994  0.302778  0.005077
+1  0.108313  0.411668  0.005784
+2  0.080395  0.233944  0.006852
+
+Overall Similarity for file 5: 0.4219352438362294
+
+Centroid Euclidean Distance Matrix for file 5:
+          0         1          2
+0  3.732085  2.765119  13.973121
+1  3.997806  2.902855  13.901480
+2  4.035277  2.926194  13.903046
+
+Centroid Pearson Correlation Matrix for file 5:
+          0         1         2
+0  0.046968 -0.038309 -0.035858
+1 -0.026563  0.024556  0.007804
+2 -0.011069  0.003750  0.031245
+Similarity Matrix for file 6:
+          0         1         2
+0  0.143979  0.419122  0.006725
+1  0.107392  0.279493  0.006032
+2  0.030061  0.246320  0.000319
+
+Overall Similarity for file 6: 0.41314775100226325
+
+Centroid Euclidean Distance Matrix for file 6:
+          0         1          2
+0  2.952611  2.077168  14.044184
+1  3.795492  2.866587  14.238287
+2  5.643588  4.077107  14.957455
+
+Centroid Pearson Correlation Matrix for file 6:
+          0         1         2
+0  0.191132 -0.193402  0.015010
+1  0.000330  0.004796 -0.024736
+2 -0.201821  0.199326  0.007768
+Similarity Matrix for file 7:
+          0         1         2
+0  0.153183  0.396886  0.007214
+1  0.109351  0.287940  0.006130
+2  0.029791  0.259397  0.000450
+
+Overall Similarity for file 7: 0.4167809953191321
+
+Centroid Euclidean Distance Matrix for file 7:
+          0         1          2
+0  2.908602  2.170435  13.763783
+1  3.748524  2.820379  13.958642
+2  5.565837  3.956387  14.657576
+
+Centroid Pearson Correlation Matrix for file 7:
+          0         1         2
+0  0.219999 -0.222826  0.018313
+1 -0.006020  0.011575 -0.026984
+2 -0.221053  0.218700  0.006710
+Similarity Matrix for file 8:
+          0         1         2
+0  0.156730  0.353660  0.006637
+1  0.030321  0.267927  0.000539
+2  0.114315  0.324071  0.007366
+
+Overall Similarity for file 8: 0.4205218322136999
+
+Centroid Euclidean Distance Matrix for file 8:
+          0         1          2
+0  3.031646  2.427920  13.668752
+1  5.510796  3.874945  14.487648
+2  3.685625  2.770867  13.756050
+
+Centroid Pearson Correlation Matrix for file 8:
+          0         1         2
+0  0.219206 -0.219238  0.004815
+1 -0.230641  0.228503  0.005402
+2  0.004312 -0.002232 -0.009938
+Similarity Matrix for file 9:
+          0         1         2
+0  0.155957  0.353183  0.006712
+1  0.115244  0.320493  0.008070
+2  0.032336  0.271929  0.000183
+
+Overall Similarity for file 9: 0.4213691138535138
+
+Centroid Euclidean Distance Matrix for file 9:
+          0         1          2
+0  3.035615  2.437320  13.486128
+1  3.679542  2.782510  13.561905
+2  5.459294  3.831286  14.332583
+
+Centroid Pearson Correlation Matrix for file 9:
+          0         1         2
+0  0.215374 -0.215621  0.006288
+1  0.006094 -0.005155 -0.004326
+2 -0.227793  0.227077 -0.001999
+Similarity Matrix for file 10:
+          0         1         2
+0  0.226345  0.267031  0.012867
+1  0.102179  0.329419  0.006331
+2  0.040804  0.345635  0.000389
+
+Overall Similarity for file 10: 0.44366640822873693
+
+Centroid Euclidean Distance Matrix for file 10:
+          0         1          2
+0  2.914991  3.106732  12.238560
+1  4.452329  3.201891  12.689985
+2  4.143236  2.468758  12.721485
+
+Centroid Pearson Correlation Matrix for file 10:
+         0         1         2
+0  0.37943 -0.388555  0.055277
+1 -0.16467  0.167029 -0.016329
+2 -0.23490  0.242821 -0.045096
+Similarity Matrix for file 11:
+          0         1         2
+0  0.017995  0.038538  0.002870
+1  0.159918  0.583211  0.006554
+2  0.094988  0.281200  0.007024
+
+Overall Similarity for file 11: 0.39743291645996187
+
+Centroid Euclidean Distance Matrix for file 11:
+           0          1          2
+0  12.847441  12.258527  17.647849
+1   2.872019   1.843042  12.446632
+2   4.695170   3.583778  12.896991
+
+Centroid Pearson Correlation Matrix for file 11:
+          0         1         2
+0 -0.186234  0.199575 -0.070436
+1  0.199747 -0.206933  0.040910
+2 -0.142838  0.145210 -0.015801
+Similarity Matrix for file 12:
+          0         1         2
+0  0.101603  0.258287  0.007473
+1  0.033550  0.390638  0.000173
+2  0.220414  0.295990  0.010772
+
+Overall Similarity for file 12: 0.4396335339699917
+
+Centroid Euclidean Distance Matrix for file 12:
+          0         1          2
+0  4.976632  3.996253  13.338633
+1  4.329635  2.493279  13.269470
+2  2.855706  2.913448  12.794089
+
+Centroid Pearson Correlation Matrix for file 12:
+          0         1         2
+0 -0.150362  0.156108 -0.031867
+1 -0.256021  0.255908 -0.005871
+2  0.373841 -0.379949  0.039239
+Similarity Matrix for file 13:
+          0         1         2
+0  0.035183  0.390331  0.000062
+1  0.220647  0.287696  0.011062
+2  0.102948  0.267142  0.007501
+
+Overall Similarity for file 13: 0.4408567900628229
+
+Centroid Euclidean Distance Matrix for file 13:
+          0         1          2
+0  4.308113  2.482340  13.240794
+1  2.875292  2.964010  12.753563
+2  4.899247  3.913005  13.277768
+
+Centroid Pearson Correlation Matrix for file 13:
+          0         1         2
+0 -0.253097  0.253613 -0.009038
+1  0.374714 -0.381414  0.042345
+2 -0.149262  0.154938 -0.031546
+Similarity Matrix for file 14:
+          0         1         2
+0  0.040578  0.336418  0.007574
+1  0.184899  0.353719  0.004479
+2  0.101287  0.252540  0.007302
+
+Overall Similarity for file 14: 0.4295985917601883
+
+Centroid Euclidean Distance Matrix for file 14:
+          0         1          2
+0  3.884601  2.262500  13.152356
+1  3.228659  3.060372  13.415021
+2  5.780102  4.710219  13.875420
+
+Centroid Pearson Correlation Matrix for file 14:
+          0         1         2
+0 -0.133597  0.095920  0.168573
+1  0.284953 -0.271896 -0.056457
+2 -0.209584  0.215923 -0.030265
+Similarity Matrix for file 15:
+          0         1         2
+0  0.101475  0.238674  0.007209
+1  0.142435  0.202235  0.008160
+2  0.092795  0.503313  0.004263
+
+Overall Similarity for file 15: 0.4335196638544207
+
+Centroid Euclidean Distance Matrix for file 15:
+          0         1          2
+0  5.833950  4.897493  14.230314
+1  4.033206  3.728710  13.907539
+2  3.241388  1.884851  13.516300
+
+Centroid Pearson Correlation Matrix for file 15:
+          0         1         2
+0 -0.155854  0.160440 -0.022294
+1  0.174594 -0.166336 -0.034626
+2  0.049770 -0.063345  0.061002
+Similarity Matrix for file 16:
+          0         1         2
+0  0.024545  0.036649  0.005184
+1  0.125773  0.652959  0.005415
+2  0.100492  0.224832  0.007205
+
+Overall Similarity for file 16: 0.3943511584190141
+
+Centroid Euclidean Distance Matrix for file 16:
+          0         1          2
+0  7.838404  7.387362  15.325498
+1  2.979519  1.724543  13.639410
+2  5.821738  4.953896  14.354318
+
+Centroid Pearson Correlation Matrix for file 16:
+          0         1         2
+0 -0.074042  0.084082 -0.044591
+1  0.137720 -0.143007  0.024329
+2 -0.122041  0.125145 -0.014637
+Similarity Matrix for file 17:
+          0         1         2
+0  0.016978  0.032424  0.002822
+1  0.137023  0.655968  0.005871
+2  0.101158  0.216641  0.007799
+
+Overall Similarity for file 17: 0.39222783258271926
+
+Centroid Euclidean Distance Matrix for file 17:
+           0          1          2
+0  14.044329  13.460330  18.988399
+1   2.862175   1.788767  13.216503
+2   5.754468   4.777270  13.920534
+
+Centroid Pearson Correlation Matrix for file 17:
+          0         1         2
+0 -0.184958  0.199918 -0.066034
+1  0.200847 -0.207294  0.028086
+2 -0.156347  0.158020 -0.006968
+Similarity Matrix for file 18:
+          0         1         2
+0  0.161224  0.168520  0.009568
+1  0.103640  0.483575  0.003948
+2  0.094746  0.288005  0.006707
+
+Overall Similarity for file 18: 0.43997796461076005
+
+Centroid Euclidean Distance Matrix for file 18:
+          0         1          2
+0  3.774005  3.729897  13.271402
+1  3.375575  1.973613  13.189943
+2  4.845282  3.741029  13.508455
+
+Centroid Pearson Correlation Matrix for file 18:
+          0         1         2
+0  0.251766 -0.254856  0.020602
+1 -0.000624 -0.001293  0.009378
+2 -0.160558  0.164183 -0.021250
+Similarity Matrix for file 19:
+          0         1         2
+0  0.217658  0.306855  0.010618
+1  0.102382  0.265485  0.007579
+2  0.035053  0.370048  0.000104
+
+Overall Similarity for file 19: 0.438594274504618
+
+Centroid Euclidean Distance Matrix for file 19:
+          0         1          2
+0  2.849981  2.865527  12.677665
+1  4.932362  3.924973  13.209864
+2  4.341041  2.599420  13.169976
+
+Centroid Pearson Correlation Matrix for file 19:
+          0         1         2
+0  0.358826 -0.364468  0.036501
+1 -0.163679  0.169568 -0.032829
+2 -0.229312  0.228444 -0.001496
+Similarity Matrix for file 20:
+          0         1         2
+0  0.100955  0.342563  0.005994
+1  0.106678  0.430145  0.004643
+2  0.162089  0.166545  0.010267
+
+Overall Similarity for file 20: 0.4432928998515509
+
+Centroid Euclidean Distance Matrix for file 20:
+          0         1          2
+0  4.578401  3.294539  13.107681
+1  3.359617  2.239498  12.840283
+2  3.765642  3.756841  12.914709
+
+Centroid Pearson Correlation Matrix for file 20:
+          0         1         2
+0 -0.203229  0.207892 -0.027435
+1  0.062829 -0.065699  0.015417
+2  0.253876 -0.257757  0.024834
+
+-------------------------------------------------
+
+Considering only continuous features:
+
+Similarity Matrix for file 1:
+          0         1         2
+0  0.093114  0.465825  0.003830
+1  0.022912  0.031345  0.003183
+2  0.101871  0.446642  0.004206
+
+Overall Similarity for file 1: 0.3909758627740007
+
+Centroid Euclidean Distance Matrix for file 1:
+          0         1         2
+0  2.778795  1.229956  5.796526
+1  6.519771  6.002849  8.217001
+2  2.777001  1.265243  5.789522
+
+Centroid Pearson Correlation Matrix for file 1:
+          0         1         2
+0 -0.316001  0.286877  0.125358
+1 -0.217465  0.196380  0.098489
+2  0.448869 -0.407081 -0.182975
+Similarity Matrix for file 2:
+          0         1         2
+0  0.000000  0.589054  0.000000
+1  0.000000  0.410940  0.000000
+2  0.954755  0.000005  0.045204
+
+Overall Similarity for file 2: 0.6666526816194621
+
+Centroid Euclidean Distance Matrix for file 2:
+          0         1         2
+0  2.852331  0.885577  4.169885
+1  2.987791  1.269425  4.267497
+2  0.129707  2.720833  2.727314
+
+Centroid Pearson Correlation Matrix for file 2:
+          0         1         2
+0 -0.118468  0.142721 -0.399360
+1 -0.544305  0.524277 -0.174053
+2  0.998704 -1.000000  0.799999
+Similarity Matrix for file 3:
+          0         1         2
+0  0.110580  0.459552  0.005744
+1  0.108051  0.440179  0.005591
+2  0.025810  0.035532  0.004786
+
+Overall Similarity for file 3: 0.39860855043650206
+
+Centroid Euclidean Distance Matrix for file 3:
+          0         1         2
+0  2.601829  1.228524  3.759944
+1  2.642922  1.282703  3.792583
+2  6.149389  5.670740  6.682101
+
+Centroid Pearson Correlation Matrix for file 3:
+          0         1         2
+0 -0.303642  0.283673  0.027805
+1  0.448881 -0.419355 -0.041179
+2 -0.227180  0.212227  0.020974
+Similarity Matrix for file 4:
+          0         1         2
+0  0.121468  0.845337  0.005461
+1  0.025505  0.035450  0.004541
+2  0.000000  0.000000  0.023917
+
+Overall Similarity for file 4: 0.35389292014214707
+
+Centroid Euclidean Distance Matrix for file 4:
+           0          1          2
+0   2.357803   0.402419   3.726223
+1   6.167848   5.679203   6.764828
+2  81.149770  81.325578  78.420055
+
+Centroid Pearson Correlation Matrix for file 4:
+          0         1         2
+0  0.197727 -0.180593 -0.071863
+1 -0.216984  0.202023  0.027766
+2  0.310587 -0.355483  0.842233
+Similarity Matrix for file 5:
+          0         1         2
+0  0.110005  0.372519  0.005739
+1  0.115440  0.553653  0.005687
+2  0.000000  0.000000  0.023560
+
+Overall Similarity for file 5: 0.39553454477626904
+
+Centroid Euclidean Distance Matrix for file 5:
+           0          1          2
+0   2.610662   1.344853   3.626804
+1   2.457941   0.916613   3.510464
+2  79.892235  80.047642  77.522070
+
+Centroid Pearson Correlation Matrix for file 5:
+          0         1         2
+0  0.460472 -0.432947 -0.015113
+1 -0.474346  0.447573 -0.006747
+2  0.302856 -0.343305  0.816264
+Similarity Matrix for file 6:
+          0         1         2
+0  0.000000  0.467933  0.000000
+1  0.000000  0.532067  0.000000
+2  0.961526  0.000000  0.038474
+
+Overall Similarity for file 6: 0.6666666666666666
+
+Centroid Euclidean Distance Matrix for file 6:
+          0         1         2
+0  2.920714  1.240280  4.046294
+1  2.871769  1.090780  4.011248
+2  0.101750  2.658918  2.542893
+
+Centroid Pearson Correlation Matrix for file 6:
+          0         1         2
+0 -0.547509  0.531465 -0.187752
+1 -0.048388  0.067880 -0.335194
+2  0.999144 -1.000000  0.801811
+Similarity Matrix for file 7:
+          0         1         2
+0  0.113672  0.428298  0.005229
+1  0.118783  0.464603  0.005419
+2  0.025534  0.037922  0.003659
+
+Overall Similarity for file 7: 0.40103971760577045
+
+Centroid Euclidean Distance Matrix for file 7:
+          0         1         2
+0  2.561393  1.249771  3.630687
+1  2.494518  1.163988  3.574081
+2  6.034180  5.550979  6.557825
+
+Centroid Pearson Correlation Matrix for file 7:
+          0         1         2
+0 -0.316671  0.299558  0.014745
+1  0.475193 -0.449819 -0.017345
+2 -0.230510  0.218695  0.000682
+Similarity Matrix for file 8:
+          0         1         2
+0  0.123635  0.514389  0.005322
+1  0.111400  0.409660  0.005178
+2  0.000000  0.000000  0.027799
+
+Overall Similarity for file 8: 0.39912785900271985
+
+Centroid Euclidean Distance Matrix for file 8:
+           0          1          2
+0   2.403178   1.013315   3.498554
+1   2.561325   1.258679   3.610669
+2  77.144853  77.286991  74.729146
+
+Centroid Pearson Correlation Matrix for file 8:
+          0         1         2
+0 -0.448970  0.423498  0.032887
+1  0.434607 -0.408433 -0.055248
+2  0.309526 -0.346998  0.827017
+Similarity Matrix for file 9:
+          0         1         2
+0  0.121609  0.477806  0.005510
+1  0.115296  0.446836  0.005307
+2  0.000000  0.000000  0.027252
+
+Overall Similarity for file 9: 0.3998722427514269
+
+Centroid Euclidean Distance Matrix for file 9:
+           0          1          2
+0   2.476467   1.181860   3.489625
+1   2.552602   1.260292   3.548677
+2  76.943368  77.083814  74.609900
+
+Centroid Pearson Correlation Matrix for file 9:
+          0         1         2
+0  0.318637 -0.301088 -0.014378
+1 -0.327284  0.310422 -0.003275
+2  0.295727 -0.332778  0.813138
+Similarity Matrix for file 10:
+          0         1         2
+0  0.137487  0.472755  0.006549
+1  0.134854  0.437581  0.006706
+2  0.000000  0.000000  0.018364
+
+Overall Similarity for file 10: 0.4047654556598035
+
+Centroid Euclidean Distance Matrix for file 10:
+           0          1          2
+0   2.303756   1.126570   2.952765
+1   2.344248   1.214164   2.973954
+2  85.126290  85.233136  83.401844
+
+Centroid Pearson Correlation Matrix for file 10:
+          0         1         2
+0  0.466319 -0.444183  0.031269
+1 -0.479059  0.457434 -0.050498
+2  0.290939 -0.322273  0.763236
+Similarity Matrix for file 11:
+          0         1         2
+0  0.140739  0.513248  0.006565
+1  0.025883  0.039134  0.004068
+2  0.127994  0.361917  0.006770
+
+Overall Similarity for file 11: 0.40877297957157
+
+Centroid Euclidean Distance Matrix for file 11:
+          0         1         2
+0  2.248318  1.008063  2.936853
+1  5.946010  5.518510  6.250392
+2  2.425469  1.369243  3.068432
+
+Centroid Pearson Correlation Matrix for file 11:
+          0         1         2
+0  0.477405 -0.455526  0.039496
+1 -0.246876  0.237159 -0.046953
+2 -0.310563  0.295606 -0.013652
+Similarity Matrix for file 12:
+          0         1         2
+0  0.000000  0.518402  0.000000
+1  0.000000  0.481598  0.000000
+2  0.960431  0.000000  0.039569
+
+Overall Similarity for file 12: 0.6666666666666666
+
+Centroid Euclidean Distance Matrix for file 12:
+          0         1         2
+0  2.746259  1.117664  3.483467
+1  2.771783  1.203078  3.501308
+2  0.079186  2.508854  1.922037
+
+Centroid Pearson Correlation Matrix for file 12:
+          0         1         2
+0 -0.084069  0.100172 -0.332699
+1 -0.569304  0.556251 -0.258035
+2  0.999379 -1.000000  0.837468
+Similarity Matrix for file 13:
+          0         1         2
+0  0.000000  0.468589  0.000000
+1  0.000000  0.531411  0.000000
+2  0.960343  0.000000  0.039657
+
+Overall Similarity for file 13: 0.6666666666666666
+
+Centroid Euclidean Distance Matrix for file 13:
+          0         1         2
+0  2.792397  1.238001  3.506251
+1  2.727997  1.091647  3.456908
+2  0.078633  2.507176  1.904168
+
+Centroid Pearson Correlation Matrix for file 13:
+          0         1         2
+0 -0.569775  0.556699 -0.257816
+1 -0.090056  0.106181 -0.339135
+2  0.999388 -1.000000  0.838452
+Similarity Matrix for file 14:
+          0         1         2
+0  0.124010  0.431157  0.006182
+1  0.025514  0.038845  0.005160
+2  0.126726  0.454067  0.006300
+
+Overall Similarity for file 14: 0.40598751346253764
+
+Centroid Euclidean Distance Matrix for file 14:
+          0         1         2
+0  2.434529  1.190426  3.213413
+1  5.976604  5.516578  6.292188
+2  2.398939  1.132556  3.181367
+
+Centroid Pearson Correlation Matrix for file 14:
+          0         1         2
+0  0.464388 -0.441123  0.020971
+1 -0.239592  0.227997 -0.017239
+2 -0.291757  0.276963 -0.010395
+Similarity Matrix for file 15:
+          0         1         2
+0  0.122428  0.451073  0.005977
+1  0.025277  0.038102  0.005289
+2  0.118456  0.438536  0.005897
+
+Overall Similarity for file 15: 0.40367803955984155
+
+Centroid Euclidean Distance Matrix for file 15:
+          0         1         2
+0  2.493500  1.246332  3.368895
+1  6.001719  5.524964  6.356557
+2  2.539437  1.280296  3.397268
+
+Centroid Pearson Correlation Matrix for file 15:
+          0         1         2
+0 -0.294844  0.279098 -0.001465
+1 -0.243910  0.231004 -0.003034
+2  0.451922 -0.427842  0.003068
+Similarity Matrix for file 16:
+          0         1         2
+0  0.024545  0.036649  0.005184
+1  0.124698  0.441006  0.006217
+2  0.111456  0.451714  0.005503
+
+Overall Similarity for file 16: 0.4023241383139657
+
+Centroid Euclidean Distance Matrix for file 16:
+          0         1         2
+0  6.131781  5.657330  6.518303
+1  2.475438  1.167305  3.422534
+2  2.516290  1.156075  3.461096
+
+Centroid Pearson Correlation Matrix for file 16:
+          0         1         2
+0 -0.231573  0.218612  0.005279
+1  0.486330 -0.461151  0.019508
+2 -0.318842  0.302739 -0.018855
+Similarity Matrix for file 17:
+          0         1         2
+0  0.125764  0.517376  0.006036
+1  0.125559  0.400627  0.006263
+2  0.000000  0.000000  0.017029
+
+Overall Similarity for file 17: 0.39955171679027623
+
+Centroid Euclidean Distance Matrix for file 17:
+           0          1          2
+0   2.388639   1.029002   3.167211
+1   2.467938   1.322138   3.230730
+2  90.976467  91.097634  89.016872
+
+Centroid Pearson Correlation Matrix for file 17:
+          0         1         2
+0 -0.486605  0.464411 -0.054069
+1  0.475298 -0.452576  0.036284
+2  0.285919 -0.320092  0.779388
+Similarity Matrix for file 18:
+          0         1         2
+0  0.000000  0.496804  0.000000
+1  0.961196  0.000000  0.038804
+2  0.000000  0.503196  0.000000
+
+Overall Similarity for file 18: 0.6666666666666666
+
+Centroid Euclidean Distance Matrix for file 18:
+          0         1         2
+0  2.770463  1.167914  3.500183
+1  0.077707  2.519041  1.924841
+2  2.766405  1.153080  3.497854
+
+Centroid Pearson Correlation Matrix for file 18:
+          0         1         2
+0 -0.061604  0.076995 -0.309009
+1  0.999413 -1.000000  0.837785
+2 -0.575049  0.562656 -0.268654
+Similarity Matrix for file 19:
+          0         1         2
+0  0.794081  0.033516  0.032702
+1  0.000000  0.494827  0.000000
+2  0.000000  0.465274  0.000000
+
+Overall Similarity for file 19: 0.6068001971698987
+
+Centroid Euclidean Distance Matrix for file 19:
+          0         1         2
+0  1.032403  2.247385  2.080300
+1  2.688600  1.056341  3.329282
+2  2.716512  1.127053  3.357865
+
+Centroid Pearson Correlation Matrix for file 19:
+          0         1         2
+0  0.840972 -0.846721  0.805169
+1 -0.014603  0.038931 -0.423790
+2 -0.579452  0.567884 -0.292117
+Similarity Matrix for file 20:
+          0         1         2
+0  0.129788  0.441939  0.006062
+1  0.136194  0.436269  0.006431
+2  0.025900  0.040600  0.006394
+
+Overall Similarity for file 20: 0.40985851276568575
+
+Centroid Euclidean Distance Matrix for file 20:
+          0         1         2
+0  2.417588  1.267854  3.112887
+1  2.372354  1.278498  3.063027
+2  5.829693  5.382844  6.079682
+
+Centroid Pearson Correlation Matrix for file 20:
+          0         1         2
+0  0.445478 -0.423619  0.006814
+1 -0.288165  0.273776 -0.000211
+2 -0.244286  0.232914 -0.014059

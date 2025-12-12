@@ -1,0 +1,2 @@
+1) fashion mnist
+2) try to find some dataset which is the most convinient for you. try to encode the dataset as a graph. use anything that will compute matricies, find proper tool, just transform the dataset into graph and tell how you've done it.

@@ -1,0 +1,94 @@
+-- Problem 2 (a)
+
+-- make tid as primary key as discussed in Problem 1 (d)
+-- runtime: <1s
+ALTER TABLE Movie
+ADD PRIMARY KEY (tid);
+
+-- make nid as primary key as discussed in Problem 1 (d)
+-- runtime: <1s
+ALTER TABLE Director
+ADD PRIMARY KEY (nid);
+
+-- make nid as primary key as discussed in Problem 1 (d)
+-- runtime: <1s
+ALTER TABLE Actor
+ADD PRIMARY KEY (nid);
+
+-- make combination (nid, tid) as primary key as discussed in Problem 1 (d)
+-- then add foreign key constraint on nid pointing to Director
+-- and another foreign key constraint on tid pointing to Movie
+-- runtime: <1s
+ALTER TABLE Directs
+ADD PRIMARY KEY (nid, tid);
+ALTER TABLE Directs
+ADD FOREIGN KEY (nid) REFERENCES Director(nid) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE Directs
+ADD FOREIGN KEY (tid) REFERENCES Movie(tid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+-- make combination (nid, tid) as primary key as discussed in Problem 1 (d)
+-- then add foreign key constraint on nid pointing to Actor
+-- and another foreign key constraint on tid pointing to Movie
+-- runtime: <1s
+ALTER TABLE StarsIn
+ADD PRIMARY KEY (nid, tid);
+ALTER TABLE StarsIn
+ADD FOREIGN KEY (nid) REFERENCES Actor(nid) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE StarsIn
+ADD FOREIGN KEY (tid) REFERENCES Movie(tid) ON UPDATE CASCADE ON DELETE CASCADE;
+
+-- drop unused tables to free memory
+-- runtime: 3s
+DROP TABLE IF EXISTS Ratings;
+DROP TABLE IF EXISTS Principals;
+DROP TABLE IF EXISTS Persons;
+DROP TABLE IF EXISTS Titles;
+
+-- Problem 2 (b)
+
+-- runtime: <1s
+SELECT nid FROM Director WHERE name = 'Steven Spielberg'; -- returns 'nm0000229'
+SELECT nid, tid FROM Directs WHERE nid = 'nm0000229'; -- returns 26 tuples for nid='nm0000229'
+UPDATE Director SET nid = '123456789' WHERE name = 'Steven Spielberg'; -- update Steven Spielberg's nid to '123456789'
+SELECT nid FROM Director WHERE name = 'Steven Spielberg'; -- returns '123456789'
+SELECT * FROM Directs WHERE nid = '123456789'; -- returns same 26 tid's for nid='123456789' as for nid='nm0000229' before the update, thus verifying the cascading behaviour of Directs nid foreign key
+
+-- Problem 2 (с)
+
+-- runtime: <1s
+SELECT nid FROM Actor WHERE name = 'Robert De Niro'; -- returns 'nm0000134'
+SELECT * FROM Directs WHERE nid = 'nm0000134'; -- empty return
+SELECT * FROM StarsIn WHERE nid = 'nm0000134'; -- returns 33 tuples for nid='nm0000134'
+DELETE FROM Actor WHERE name = 'Robert De Niro'; -- DELETE 1
+DELETE FROM Director WHERE name = 'Robert De Niro'; -- DELETE 0
+SELECT * FROM Directs WHERE nid = 'nm0000134'; -- empty return, not verifying anything, since his nid was not in Director table
+SELECT * FROM StarsIn WHERE nid = 'nm0000134'; -- empty return, thus verifying the cascading behaviour of StarsIn nid foreign key
+
+-- Problem 2 (d)
+
+-- try to insert into Directs nid that exists in Director
+-- and insert tid that does not exist in Movie
+-- same for StarsIn, but with non-existing nid
+-- runtime: <1s
+INSERT INTO Directs (nid, tid) VALUES ('123456789', 'tt9999999'); -- get "Key (tid)=(tt9999999) is not present in table 'movie'" error, since tid='tt9999999' does not exist in Movie
+INSERT INTO StarsIn (nid, tid) VALUES ('nm9999999', 'tt0068646'); -- get "Key (nid)=(nm9999999) is not present in table 'actor'" error, since nid='nm9999999' does not exist in Actor
+
+-- Problem 2 (e)
+
+-- try to change existing tid in Movie to non-existing one
+-- runtime: <1s
+UPDATE Directs 
+SET 
+	nid='123456789', 
+	tid='9999999999'
+WHERE nid='123456789' AND tid='tt0073195';
+-- get "Key (tid)=(9999999999) is not present in table 'movie'" error, since tid='9999999999' does not exist in Movie
+
+-- same for StarsIn, but with non-existing nid
+-- runtime: <1s
+UPDATE StarsIn 
+SET 
+	nid='123456780', 
+	tid='tt0027125'
+WHERE nid='nm0000001' AND tid='tt0027125';
+-- get -- get "Key (nid)=(123456780) is not present in table 'actor'" error, since nid='123456780' does not exist in Actor

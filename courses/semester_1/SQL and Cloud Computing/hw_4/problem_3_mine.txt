@@ -1,0 +1,67 @@
+-- problem 3
+
+-- total runtime: 
+-- (a) runtime: 
+-- (b) runtime: 
+-- (c) runtime: 
+
+-- IMPORTANT: the code was run on IRIS
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+-- prerequisites
+
+-- send ActorsLookup.java from your local machine to your IRIS home directory
+scp -P 8022 ActorsLookup.java <yourlogin>@access-iris.uni.lu:~/
+
+-- login to the IRIS and request a computational node
+ssh -p 8022 azaitsev@access-iris.uni.lu
+srun -p interactive --pty bash -i
+
+-- ONLY ON FIRST TIME: download and extract the Apache HBase 2.5.6 binaries to your home directory
+cd ~/
+wget https://dlcdn.apache.org/hbase/2.5.6/hbase-2.5.6-bin.tar.gz
+tar -xvf hbase-2.5.6-bin.tar.gz
+
+-- export environment variables, load java module 
+export HADOOP_HOME=~/hadoop-3.3.4
+export HBASE_HOME=~/hbase-2.5.6
+export PATH=~/hadoop-3.3.4/bin:~/hbase-2.5.6/bin:$PATH
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+
+-- compile the ActorsLookup.java:
+for i in $HADOOP_HOME/share/hadoop/common/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HADOOP_HOME/share/hadoop/common/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HBASE_HOME/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done 
+
+javac ActorsLookup.java
+jar -cvf ActorsLookup.jar *.class
+
+-- start the HBase server
+start-hbase.sh
+jps
+hbase shell
+
+-----------------------------------------------------------------------------------------------------------
+
+-- (a)
+
+-- create table for 'name_basics'
+create 'name_basics', 'info'
+
+-- quit HBase shell
+quit
+
+-- load data into table from local .tsv file
+hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.columns=HBASE_ROW_KEY,info:primaryName,info:birthYear,info:deathYear,info:primaryProfession,info:knownForTitles name_basics name.basics.tsv
+
+
+-- (b)
+
+
+-- (c)
+
+hadoop jar ActorsLookup.jar ActorsLookup ~/hbase_output
+
+cat ~/hadoop-output-directory/part-r-* | sort -k2,2n | head -n 25

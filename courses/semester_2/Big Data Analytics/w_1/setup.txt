@@ -1,0 +1,37 @@
+# java
+sudo apt remove --purge openjdk-\* default-jre default-jdk
+sudo apt update
+sudo apt install default-jdk
+export JAVA_HOME=/usr/lib/jvm/default-java
+
+# hadoop
+# https://archive.apache.org/dist/hadoop/core/hadoop-3.3.4/
+tar -xzf hadoop-3.3.4.tar.gz
+
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# compile the WordCount.java and put the class file into a Jar file called WordCount.jar:
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar *.java
+jar -cvf HadoopWordCount.jar *.class
+
+# run Hadoop job
+hadoop jar HadoopWordCount.jar HadoopWordCount wiki-articles/AA/ ~/hadoop-output
+
+# scala
+# https://www.scala-lang.org/download/2.13.0.html
+tar -xzf scala-2.13.0.tgz
+export SCALA_HOME=~/scala-2.13.0
+
+# spark
+# https://archive.apache.org/dist/spark/spark-3.3.4/
+tar -xzf spark-3.3.4-bin-hadoop3-scala2.13.tgz
+export SPARK_HOME=~/spark-3.3.4-bin-hadoop3-scala2.13
+export PATH=~/spark-3.3.4-bin-hadoop3-scala2.13/bin:$PATH
+
+# compile the SparkWordCount.scala and put the class file into a Jar file called SparkWordCount.jar:
+scalac -cp "$SPARK_HOME/jars/*" SparkWordCount.scala
+jar -cvf SparkWordCount.jar *.class
+
+# run Spark job
+spark-submit --class SparkWordCount SparkWordCount.jar wiki-articles/AA/ spark-output

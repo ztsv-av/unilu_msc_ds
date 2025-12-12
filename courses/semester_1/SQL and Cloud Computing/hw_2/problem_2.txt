@@ -1,0 +1,318 @@
+-------------------------------------------------------------------------------------------------------------------
+Solution script was run on one of the computational nodes of the IRIS cluster.
+
+Total runtime: 1,266,300 ms = 21m 6s 300ms
+
+-------------------------------------------------------------------------------------------------------------------
+
+Steps to reproduce the problem solution (see solutions explanation for each part of the problem (i.e. (a), (b), (c)) below):
+
+Step 1 - create a shell script file on your local machine by running the following command:
+```
+nano problem_2.sh
+```
+
+Step 2 - Step 1 will open 'nano' text editor for problem_2.sh file. Copy the code below into the .sh script file,
+	 save it and close.
+```
+#!/bin/bash
+
+# function to copy files from specified subfolders to a new directory and modify filenames
+copy_and_rename_files() {
+    target_dir="$1"
+    shift
+    subfolders=("$@")
+    for subfolder in "${subfolders[@]}"; do
+        for file in "Wikipedia-En-41784-Articles/$subfolder"/*.1lineperdoc; do
+            filename=$(basename "$file")
+	    cp "$file" "$target_dir/${subfolder}_${filename}"
+        done
+    done
+    echo "Finished copy $target_dir"
+}
+
+# function to run Hadoop job for specified subfolders and record elapsed time
+run_hadoop_job() {
+    start_time=$(date +%s%3N)
+    hadoop jar WordCount.jar WordCount ~/"$1" ~/hadoop-output/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "$1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished Hadoop $1"
+}
+
+# main execution
+folders=("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK")
+output_file="elapsed_time.txt"
+echo "Elapsed Times:" > "$output_file"
+for ((i = 0; i < ${#folders[@]}; i++)); do
+    current_folders=("${folders[@]:0:i+1}")
+    dir_name=$(IFS=_; echo "${current_folders[*]}")
+    mkdir -p "$dir_name"
+    copy_and_rename_files "$dir_name" "${current_folders[@]}"
+    run_hadoop_job "$dir_name" "$output_file"
+done
+```
+
+Step 3 - give execute permission to problem_2.sh script by running the following command:
+```
+chmod +x problem_2.sh
+```
+
+Step 4 - copy problem_2.sh script to your home directory on the IRIS cluster:
+```
+scp -P 8022 problem_2.sh <yourlogin>@access-iris.uni.lu:~/
+```
+
+Step 5 - IF HAVE NOT DONE BEFORE - download the WordCount.zip and Wikipedia-En-41784-Articles.tar.gz examples from Moodle to your home directory.
+
+Step 6 - unzip WordCount.zip into your home directory.
+
+Step 7 - change code in the WordCount.java to the following code:
+```
+import java.io.IOException;
+
+import javax.naming.Context;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCount {
+	public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+		private final static IntWritable one = new IntWritable(1);
+		private Text word = new Text();
+
+		@Override
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String line = value.toString().toLowerCase(); // (a) (i) lower-casing all input lines
+			String[] tokens = line.split("[^a-z0-9_.]+"); // (a) (ii) splitting on characters not in [a-z0-9_.]
+			for (String token : tokens) {
+				if (!token.isEmpty()) { // skip empty tokens
+					word.set(token);
+					context.write(word, one);
+				}
+			}
+		}
+	}
+
+	public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+		@Override
+		public void reduce(Text key, Iterable<IntWritable> values, Context context)
+				throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			if (sum>10000) { // (c) filter by words that only occur more than 10000 times 
+				context.write(key, new IntWritable(sum));
+			}
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "WordCount");
+		job.setJar("WordCount.jar");
+
+		job.setMapperClass(TokenizerMapper.class);
+		// job.setCombinerClass(IntSumReducer.class); // enable to use 'local aggregation'
+		job.setReducerClass(IntSumReducer.class);
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+```
+
+Step 8 - copy WordCount.java and Wikipedia-En-41784-Articles.tar.gz to your home directory on the IRIS cluster:
+```
+scp -P 8022 WordCount.java <yourlogin>@access-iris.uni.lu:~/
+
+scp -P 8022 Wikipedia-En-41784-Articles.tar.gz <yourlogin>@access-iris.uni.lu:~/
+```
+
+Step 9 - login to the IRIS cluster:
+```
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+```
+
+Step 10 - request an access to one of the compute nodes on IRIS cluster:
+```
+srun -p interactive --pty bash -i
+```
+
+Step 11 - ONLY ON FIRST-TIME USAGE OF IRIS - download and install Hadoop 3.3.4 into your home directory on IRIS
+```
+wget https://dlcdn.apache.org/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz
+
+tar -xvf hadoop-3.3.4.tar.gz
+```
+
+Step 12 - export environment settings for Java and Hadoop:
+```
+module load lang/Java/1.8.0_241
+
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+```
+
+Step 13 - compile the WordCount.java files and put the class files into a Jar file called WordCount.jar:
+```
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar *.java
+
+jar -cvf WordCount.jar *.class
+```
+
+Step 14 - run problem_2.sh shell script.
+```
+./problem_2.sh
+```
+
+Step 15 - folders with hadoop output for each step will be saved to "hadoop-output/" folder and
+	  and elapsed times information will be saved to "elapsed_time.txt" file.
+
+-------------------------------------------------------------------------------------------------------------------
+Explanations for solutions for each part of the problem.
+
+(a) 
+Here we need to modify the map() function.
+    For (i) we can use .toLowerCase() function:
+        String line = value.toString().toLowerCase();
+    For (ii) we can split by "[^a-z0-9_.]+":
+        String[] tokens = line.split("[^a-z0-9_.]+");
+map() function code:
+```
+public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+    String line = value.toString().toLowerCase(); // (a) (i) lower-casing all input lines
+    String[] tokens = line.split("[^a-z0-9_.]+"); // (a) (ii) splitting on characters not in [a-z0-9_.]
+    for (String token : tokens) {
+        if (!token.isEmpty()) { // skip empty tokens
+            word.set(token);
+            context.write(word, one);
+        }
+    }
+}
+```
+
+(b)
+In order to run the MapReduce on increasing number of subsets we had to create a .sh script (code below).
+This script iterates through each subset (folders=("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK"))
+    starting from ["AA"], ["AA" "AB"], ..., up until ["AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK"].
+On each iteration, it creates a new data folder and copies files from each of the current subfolders into the new data folder
+    making sure that the files do not overwrite each other by appending subset name to the file name before copy
+    (function copy_and_rename_files()).
+    For example, when algorithm is on the ["AA" "AB" "AC"] step, 
+    copy_and_rename_files() function will create a folder called "AA_AB_AC" 
+    which will contain files from "AA", "AB" and "AC" articles.
+Then, it runs MapReduce algorithm on the aggregated data, recording the starting time beforehand, and, after the MapReduce is finished,
+    it records the elapsed time by writing the value of the 'elapsed_time' variable 
+    with the name of the folder where the data is stored into 'elapsed_time.txt' file.
+    For example, when algorithm is on the ["AA" "AB" "AC"] step,
+    run_hadoop_job() will pass "AA_AB_AC" folder name to the hadoop call
+    which will contain all the articles from "AA", "AB", "AC" folders
+    and, after hadoop call is finished, it will append the following line to the "elapsed_time.txt" file:
+    "AA_AB_AC: 54930 milliseconds".
+Below you will find .sh code and elapsed_time.txt content after running it on all of the Wikipedia articles.
+
+.sh code:
+```
+#!/bin/bash
+
+# function to copy files from specified subfolders to a new directory and modify filenames
+copy_and_rename_files() {
+    target_dir="$1"
+    shift
+    subfolders=("$@")
+    for subfolder in "${subfolders[@]}"; do
+        for file in "Wikipedia-En-41784-Articles/$subfolder"/*.1lineperdoc; do
+            filename=$(basename "$file")
+	    cp "$file" "$target_dir/${subfolder}_${filename}"
+        done
+    done
+    echo "Finished copy $target_dir"
+}
+
+# function to run Hadoop job for specified subfolders and record elapsed time
+run_hadoop_job() {
+    start_time=$(date +%s%3N)
+    hadoop jar WordCount.jar WordCount ~/"$1" ~/hadoop-output/"${1}"
+    end_time=$(date +%s%3N)
+    elapsed_time=$((end_time - start_time))
+    echo "$1: $elapsed_time milliseconds" >> "$2"
+    echo "Finished Hadoop $1"
+}
+
+# main execution
+folders=("AA" "AB" "AC" "AD" "AE" "AF" "AG" "AH" "AI" "AJ" "AK")
+output_file="elapsed_time.txt"
+echo "Elapsed Times:" > "$output_file"
+for ((i = 0; i < ${#folders[@]}; i++)); do
+    current_folders=("${folders[@]:0:i+1}")
+    dir_name=$(IFS=_; echo "${current_folders[*]}")
+    mkdir -p "$dir_name"
+    copy_and_rename_files "$dir_name" "${current_folders[@]}"
+    run_hadoop_job "$dir_name" "$output_file"
+done
+```
+
+elapsed_time.txt content:
+```
+Elapsed Times:
+AA: 23843 milliseconds
+AA_AB: 42049 milliseconds
+AA_AB_AC: 58370 milliseconds
+AA_AB_AC_AD: 78324 milliseconds
+AA_AB_AC_AD_AE: 95500 milliseconds
+AA_AB_AC_AD_AE_AF: 112556 milliseconds
+AA_AB_AC_AD_AE_AF_AG: 129552 milliseconds
+AA_AB_AC_AD_AE_AF_AG_AH: 147098 milliseconds
+AA_AB_AC_AD_AE_AF_AG_AH_AI: 167494 milliseconds
+AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ: 184029 milliseconds
+AA_AB_AC_AD_AE_AF_AG_AH_AI_AJ_AK: 191408 milliseconds
+```
+
+As we can see, the runtime of the algorithm scales almost lineraly
+    as we increase the number of files in the input
+    When we plot the ratio of the runtime to the number of files
+    we can observe a linear trend. 
+    The linear coefficient (slope) is approximately 173.16
+    and y-intercept is approximately 7944.80
+
+(c)
+To find words which occur more than 10000 times,
+    we can implement a filter in the reduce() function
+    on the 'sum' variable.
+reduce() function code:
+```
+public void reduce(Text key, Iterable<IntWritable> values, Context context)
+        throws IOException, InterruptedException {
+    int sum = 0;
+    for (IntWritable val : values) {
+        sum += val.get();
+    }
+    if (sum>10000) { // (c) filter by words that only occur more than 10000 times 
+        context.write(key, new IntWritable(sum));
+    }
+}
+```
+-------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,337 @@
+# Problem 3: MEMORY-BACKED JOINS WITH APACHE HADOOP & HBASE
+
+-----------------------------------------------------------
+
+(a) Load the smaller file, namely name.basics.tsv, into an HBase index by using the nconst attribute as rowkey.
+
+# STEP 01: Using the HBase Java API we first create the name_basics HBase table if it doesn't exist. 
+# We then read the tsv file line by line storing only nconst and primaryProfession as variables.
+# We then use "put" to add a row to our table with nconst as our row key and the primaryProfession as our value.
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class HBaseLoader {
+
+    private static final String TABLE_NAME = "name_basics";
+    private static final String COLUMN_FAMILY = "cf";
+
+    public static void main(String[] args) {
+        Configuration conf = HBaseConfiguration.create();
+
+        try (Connection connection = ConnectionFactory.createConnection(conf);
+             Admin admin = connection.getAdmin()) {
+
+            createTableIfNotExists(admin, TABLE_NAME, COLUMN_FAMILY);
+
+            try (Table table = connection.getTable(TableName.valueOf(TABLE_NAME))) {
+
+                String imdbDataFilePath = "name.basics.tsv";
+
+                try (BufferedReader br = new BufferedReader(new FileReader(imdbDataFilePath))) {
+                    String line;
+                    br.readLine();
+                    while ((line = br.readLine()) != null) {
+
+                        String[] columns = line.split("\t");
+
+                        String nconst = columns[0];
+                        String primaryProfession = columns[4];
+
+                        Put put = new Put(Bytes.toBytes(nconst));
+                        put.addColumn(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes("primaryProfession"), Bytes.toBytes(primaryProfession));
+
+                        table.put(put);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createTableIfNotExists(Admin admin, String tableName, String columnFamily) throws IOException {
+        TableName hTableName = TableName.valueOf(tableName);
+        if (!admin.tableExists(hTableName)) {
+
+            ColumnFamilyDescriptor columnFamilyDescriptor = ColumnFamilyDescriptorBuilder.of(Bytes.toBytes(columnFamily));
+
+            TableDescriptor tableDescriptor = TableDescriptorBuilder
+                    .newBuilder(hTableName)
+                    .setColumnFamily(columnFamilyDescriptor)
+                    .build();
+
+            admin.createTable(tableDescriptor);
+        }
+    }
+}
+
+# STEP 02: Save the file as HBaseLoader.java and copy it along with the tsv files to the HPC server
+
+scp -P 8022 HBaseLoader.java <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 name.basics.tsv <yourlogin>@access-iris.uni.lu:~/
+scp -P 8022 title.principals.tsv <yourlogin>@access-iris.uni.lu:~/
+
+# STEP 03: Connect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si
+
+# STEP 04: Assuming you have already installed HBase, export HADOOP_HOME and HBASE_HOME environment variables
+
+export HADOOP_HOME=~/hadoop-3.3.4
+export HBASE_HOME=~/hbase-2.5.6
+export PATH=~/hadoop-3.3.4/bin:~/hbase-2.5.6/bin:$PATH
+
+# STEP 05: Load the Java JDK 1.8 module and export your JAVA_HOME environment variable
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+
+# STEP 06: Start the HBase Server 
+
+start-hbase.sh
+jps
+
+# STEP 07: Compile and run the Java code
+
+for i in $HADOOP_HOME/share/hadoop/common/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HADOOP_HOME/share/hadoop/common/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HBASE_HOME/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done 
+
+javac HBaseLoader.java
+java HBaseLoader
+
+# STEP 08: Start the HBase shell
+
+hbase shell
+
+# STEP 09: Use "list" to check if the table was created
+
+list 
+
+# We get the output below
+
+hbase:001:0> list
+TABLE                                                                                                                                                                                                   
+name_basics                                                                                                                                                                                             
+test                                                                                                                                                                                                    
+2 row(s)
+Took 0.7375 seconds                                                                                                                                                                                     
+=> ["name_basics", "test"]
+
+# STEP 10: check the content of "name_basics"
+
+scan 'name_basics'
+
+# We get the output below for 10 first rows
+hbase:004:0> scan 'name_basics', {LIMIT => 10}
+ROW                                                 COLUMN+CELL                                                                                                                                         
+ nm0000001                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.524, value=soundtrack,actor,miscellaneous                                                
+ nm0000002                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.528, value=actress,soundtrack                                                            
+ nm0000003                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.530, value=actress,soundtrack,music_department                                           
+ nm0000004                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.532, value=actor,soundtrack,writer                                                       
+ nm0000005                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.535, value=writer,director,actor                                                         
+ nm0000006                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.537, value=actress,soundtrack,producer                                                   
+ nm0000007                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.538, value=actor,soundtrack,producer                                                     
+ nm0000008                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.540, value=actor,soundtrack,director                                                     
+ nm0000009                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.542, value=actor,soundtrack,producer                                                     
+ nm0000010                                          column=cf:primaryProfession, timestamp=2023-12-18T19:18:49.544, value=actor,soundtrack,director                                                     
+10 row(s)
+Took 0.2698 seconds  
+
+-----------------------------------------------------------
+
+### NOTE: Here for convenience we solve question (b) and (c) in one go
+
+(b) Next, implement a map function in Hadoop which, for each line of title.principals.tsv, looks up the corresponding actor 
+in the previously created HBase index by issuing a get operation to HBase for the current nconst value. 
+In case a matching actor is found (i.e., the primaryProfession should contain the value actor or actress), emit the actor’s 
+name together with the movie id (i.e., the current tconst value) to your reduce function.
+
+(c) Finally, implement a corresponding reduce function that receives the emitted actor names and counts the number of distinct 
+movie ids in which each actor occurred. Emit only those actors to the part-r-XXXXX files created by Hadoop which occurred in at
+least 100 movies. Finally, sort all part-r-XXXXX files to find the top 25 actors with the highest numbers of movies and once 
+more report your results.
+
+# STEP 01: Here we create a Map Reduce job that will do the following. 
+# In the map phase it will read the title.principals.tsv file line by line and extract nconst and tconst from it using their index position
+# Then, it will use get (HBase Java API) to check for that nconst if it exists in the HBase table "name_basics" that we have 
+# created in the previous question. If there is a match then it will look for its value in the HBase table (in our case it's the 
+# primaryProfession) if that profession is "actor" or "actress" we emit that nconst/tconst pair, if not, it will not be emited.
+# In the reduced we simply count the occurence of each kay (nconst) with a different movie (tconst) we then check if that movie count
+# is higher than 100. If so we emit the nconst/count pair from the reducer.
+
+
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import org.apache.hadoop.hbase.*;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.util.Bytes;
+
+public class HBaseMapReduce {
+
+    private static final String TABLE_NAME = "name_basics";
+    private static final String COLUMN_FAMILY = "cf";
+    private static Table nameBasicsTable;
+
+    public static class Map extends Mapper<Object, Text, Text, Text> {
+
+        private Text nconst = new Text();
+        private Text tconst = new Text();
+
+        @Override
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            String line = value.toString();
+            String[] columns = line.split("\t");
+
+            String tconstStr = columns[0].trim();
+            String nconstStr = columns[2].trim();
+
+            try {
+                byte[] rowKey = Bytes.toBytes(nconstStr);
+
+                Get g = new Get(rowKey);
+                Result result = nameBasicsTable.get(g);
+
+                byte[] valueBytes = result.getValue(Bytes.toBytes(COLUMN_FAMILY), Bytes.toBytes("primaryProfession"));
+                if (valueBytes != null) {
+                    String primaryProfessionString = Bytes.toString(valueBytes);
+                    System.out.println("Value for row " + nconstStr + " was found");
+                    if (primaryProfessionString.toLowerCase().contains("actor") 
+                            || primaryProfessionString.toLowerCase().contains("actress")) {
+                        nconst.set(nconstStr);
+                        tconst.set(tconstStr);
+                        context.write(nconst, tconst);
+                    } 
+                } else {
+                    System.out.println("Row for " + nconstStr + " not found.");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static class Reduce extends Reducer<Text, Text, Text, IntWritable> {
+        private IntWritable movieCount = new IntWritable();
+
+        @Override
+        public void reduce(Text key, Iterable<Text> values, Context context)
+                throws IOException, InterruptedException {
+            int count = 0;
+            for (Text val : values) {
+                count += 1;
+            }
+            if (count >= 100) {
+                movieCount.set(count);
+                context.write(key, movieCount);
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        Configuration conf = HBaseConfiguration.create();
+        try (Connection connection = ConnectionFactory.createConnection(conf);
+             Admin admin = connection.getAdmin()) {
+
+            nameBasicsTable = connection.getTable(TableName.valueOf(TABLE_NAME));
+
+            Job job = Job.getInstance(conf, "HBaseMapReduce");
+            job.setJar("HBaseMapReduce.jar");
+
+            job.setMapperClass(Map.class);
+            job.setReducerClass(Reduce.class);
+
+            job.setOutputKeyClass(Text.class);
+            job.setOutputValueClass(Text.class);
+
+            FileInputFormat.addInputPath(job, new Path(args[0]));
+            FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+            System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+# STEP 02: Save the file as HBaseMapReduce.java and copy it to the HPC server
+
+scp -P 8022 HBaseMapReduce.java <yourlogin>@access-iris.uni.lu:~/
+
+# STEP 03: Connect to the server and open an interactive shell 
+
+ssh -p 8022 <yourlogin>@access-iris.uni.lu
+si
+
+# STEP 04: Assuming you have already installed HBase, export HADOOP_HOME and HBASE_HOME environment variables
+
+export HADOOP_HOME=~/hadoop-3.3.4
+export HBASE_HOME=~/hbase-2.5.6
+export PATH=~/hadoop-3.3.4/bin:~/hbase-2.5.6/bin:$PATH
+
+# STEP 05: Load the Java JDK 1.8 module and export your JAVA_HOME environment variable
+
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+
+# STEP 06: Start the HBase Server 
+
+start-hbase.sh
+jps
+
+# STEP 07: Compile and run the Java code
+
+for i in $HADOOP_HOME/share/hadoop/common/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HADOOP_HOME/share/hadoop/common/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done
+for i in $HBASE_HOME/lib/*.jar; do export CLASSPATH=$i:$CLASSPATH; done 
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar -cp $(hbase classpath) HBaseMapReduce.java
+jar -cvf HBaseMapReduce.jar *.class
+java -cp $(hbase classpath):. HBaseMapReduce title.principals.tsv output
+
+# STEP 08: Check the results
+
+sort -t $'\t' -k2 -rn output/part-r-* | head -n 25
+
+nm0001908       231
+nm0000779       113
+nm0002615       100
+
+### IMPORTANT NOTE: we only have 3 entries here because we were obliged to work with truncated input file due to HPC latencies. But, if run with the 
+entire input file, it would still give correct results
+

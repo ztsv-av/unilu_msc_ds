@@ -1,0 +1,226 @@
+-- problem 2
+
+-- total runtime: 1950.57 seconds
+-- (a) runtime: 478.839 seconds
+-- (b) runtime: 353.138 seconds
+-- (c) runtime: 1118.593 seconds
+
+-- IMPORTANT: the code was run on IRIS
+-- IMPORTANT: the execution times highly depend on the current server load
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- prerequisites
+
+-- see prerequisites in problem_1.txt
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (a)
+
+-- create external tables for name.basics.tsv and title.principals.tsv
+DROP TABLE IF EXISTS name_basics;
+CREATE EXTERNAL TABLE name_basics (
+    nconst STRING,
+    primaryName STRING,
+    birthYear INT,
+    deathYear INT,
+    primaryProfession ARRAY<STRING>,
+    knownForTitles ARRAY<STRING>
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION './hive_tables/name_basics_2';
+
+DROP TABLE IF EXISTS title_principals;
+CREATE EXTERNAL TABLE title_principals (
+    tconst STRING,
+    ordering INT,
+    nconst STRING,
+    category STRING,
+    job STRING,
+    characters STRING
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION './hive_tables/title_principals_2';
+
+-- load data into name_basics and title_principals tables
+LOAD DATA LOCAL INPATH './name.basics.tsv' OVERWRITE INTO TABLE name_basics;
+LOAD DATA LOCAL INPATH './title.principals.tsv' OVERWRITE INTO TABLE title_principals;
+
+-- create 2 new clustered tables with 8 sorted buckets according to the actors’ nconst
+DROP TABLE IF EXISTS clustered_name_basics;
+CREATE EXTERNAL TABLE clustered_name_basics (
+    nconst STRING,
+    primaryName STRING,
+    birthYear INT,
+    deathYear INT,
+    primaryProfession ARRAY<STRING>,
+    knownForTitles ARRAY<STRING>
+)
+CLUSTERED BY (nconst) SORTED BY (nconst ASC) INTO 8 BUCKETS
+LOCATION './hive_tables/clustered_name_basics';
+
+DROP TABLE IF EXISTS clustered_title_principals;
+CREATE EXTERNAL TABLE clustered_title_principals (
+    tconst STRING,
+    ordering INT,
+    nconst STRING,
+    category STRING,
+    job STRING,
+    characters STRING
+)
+CLUSTERED BY (nconst) SORTED BY (nconst ASC) INTO 8 BUCKETS
+LOCATION './hive_tables/clustered_title_principals';
+
+-- insert data to clustered tables
+INSERT INTO clustered_name_basics (SELECT * FROM name_basics);
+INSERT INTO clustered_title_principals (SELECT * FROM title_principals);
+
+-- verify the results of the clustering by describing the clustered tables
+DESCRIBE clustered_name_basics;
+
+``` output
++--------------------+----------------+----------+
+|      col_name      |   data_type    | comment  |
++--------------------+----------------+----------+
+| nconst             | string         |          |
+| primaryname        | string         |          |
+| birthyear          | int            |          |
+| deathyear          | int            |          |
+| primaryprofession  | array<string>  |          |
+| knownfortitles     | array<string>  |          |
++--------------------+----------------+----------+
+```
+
+-- verify the results by checking the directory tree structure that Hive created
+ls hive_tables/clustered_name_basics/
+
+``` output
+~
+├── hive_tables
+│   ├── clustered_name_basics
+│   │   ├── 000000_0
+│   │   ├── 000001_0
+│   │   ├── 000002_0
+│   │   ├── 000003_0
+│   │   ├── 000004_0
+│   │   ├── 000005_0
+│   │   ├── 000006_0
+│   │   ├── 000007_0
+```
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (b)
+
+-- set these parameters to true to perform bucketized Map-side join
+set hive.auto.convert.sortmerge.join=true;
+set hive.optimize.bucketmapjoin=true;
+set hive.optimize.bucketmapjoin.sortedmerge=true;
+
+-- perform bucketized Map-size join
+SELECT /*+ MAPJOIN(clustered_name_basics)*/ clustered_name_basics.*, clustered_title_principals.*
+FROM clustered_title_principals JOIN clustered_name_basics ON (clustered_title_principals.nconst = clustered_name_basics.nconst)
+LIMIT 10;
+
+``` output for LIMIT 10
++-------------------------------+------------------------------------+----------------------------------+----------------------------------+------------------------------------------+----------------------------------------------+------------------------------------+--------------------------------------+------------------------------------+--------------------------------------+---------------------------------+----------------------------------------+
+| clustered_name_basics.nconst  | clustered_name_basics.primaryname  | clustered_name_basics.birthyear  | clustered_name_basics.deathyear  | clustered_name_basics.primaryprofession  |     clustered_name_basics.knownfortitles     | clustered_title_principals.tconst  | clustered_title_principals.ordering  | clustered_title_principals.nconst  | clustered_title_principals.category  | clustered_title_principals.job  | clustered_title_principals.characters  |
++-------------------------------+------------------------------------+----------------------------------+----------------------------------+------------------------------------------+----------------------------------------------+------------------------------------+--------------------------------------+------------------------------------+--------------------------------------+---------------------------------+----------------------------------------+
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt1133294                          | 2                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt11559094                         | 2                                    | nm0000003                          | self                                 | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt1193059                          | 1                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt12414030                         | 3                                    | nm0000003                          | self                                 | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt12622566                         | 4                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt1262207                          | 3                                    | nm0000003                          | archive_footage                      | NULL                            | ["Jill"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt1270387                          | 4                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt13036468                         | 1                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt12206554                         | 1                                    | nm0000003                          | archive_footage                      | NULL                            | ["Self"]                               |
+| nm0000003                     | Brigitte Bardot                    | 1934                             | NULL                             | ["actress,soundtrack,music_department"]  | ["tt0056404,tt0054452,tt0049189,tt0057345"]  | tt12087548                         | 1                                    | nm0000003                          | self                                 | NULL                            | ["Self"]                               |
++-------------------------------+------------------------------------+----------------------------------+----------------------------------+------------------------------------------+----------------------------------------------+------------------------------------+--------------------------------------+------------------------------------+--------------------------------------+---------------------------------+----------------------------------------+
+
+```
+
+-- verify the bucketized Map-side join
+EXPLAIN
+SELECT /*+ MAPJOIN(clustered_name_basics)*/ clustered_name_basics.*, clustered_title_principals.*
+FROM clustered_title_principals JOIN clustered_name_basics ON (clustered_title_principals.nconst = clustered_name_basics.nconst);
+
+``` output
++----------------------------------------------------+
+|                      Explain                       |
++----------------------------------------------------+
+| STAGE DEPENDENCIES:                                |
+|   Stage-1 is a root stage                          |
+|   Stage-0 depends on stages: Stage-1               |
+|                                                    |
+| STAGE PLANS:                                       |
+|   Stage: Stage-1                                   |
+|     Map Reduce                                     |
+|       Map Operator Tree:                           |
+|           TableScan                                |
+|             alias: clustered_title_principals      |
+|             Statistics: Num rows: 37909849 Data size: 26081976320 Basic stats: COMPLETE Column stats: NONE |
+|             Filter Operator                        |
+|               predicate: nconst is not null (type: boolean) |
+|               Statistics: Num rows: 37909849 Data size: 26081976320 Basic stats: COMPLETE Column stats: NONE |
+|               Select Operator                      |
+|                 expressions: tconst (type: string), ordering (type: int), nconst (type: string), category (type: string), job (type: string), characters (type: string) |
+|                 outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5 |
+|                 Statistics: Num rows: 37909849 Data size: 26081976320 Basic stats: COMPLETE Column stats: NONE |
+|                 Sorted Merge Bucket Map Join Operator |
+|                   condition map:                   |
+|                        Inner Join 0 to 1           |
+|                   keys:                            |
+|                     0 _col0 (type: string)         |
+|                     1 _col2 (type: string)         |
+|                   outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6, _col7, _col8, _col9, _col10, _col11 |
+|                   File Output Operator             |
+|                     compressed: false              |
+|                     table:                         |
+|                         input format: org.apache.hadoop.mapred.SequenceFileInputFormat |
+|                         output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat |
+|                         serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe |
+|                                                    |
+|   Stage: Stage-0                                   |
+|     Fetch Operator                                 |
+|       limit: -1                                    |
+|       Processor Tree:                              |
+|         ListSink                                   |
+|                                                    |
++----------------------------------------------------+
+```
+
+-- perform the bucketized Map-side join on unclustered tables
+SELECT /*+ MAPJOIN(name_basics)*/ name_basics.nconst, name_basics.primaryName, title_principals.category
+FROM title_principals JOIN name_basics ON (title_principals.nconst = name_basics.nconst)
+LIMIT 10;
+
+-- runtimes:
+--   bucketized tables: 42.963 seconds
+--   unbucketized tables: 310.175 seconds
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- (c)
+
+-- comparing runtimes of queries run on managed tables and on clustered tables
+-- IMPORTANT: change name_basics and title_principals references in queries
+--   in problem_1.txt to clustered_name_basics and clustered_title_principals, respectively,
+--   in order to execute them on clustered tables
+
+-- managed tables runtimes:
+--   (a) runtime: 85.884 seconds
+--   (b) runtime: 739.302 seconds
+--   (c) runtime: 715.146 seconds
+-- clustered tables runtimes:
+--   (a) runtime: 68.346 seconds
+--   (b) runtime: 545.385 seconds
+--   (c) runtime: 504.862 seconds
+
+-- we can notice that we get the same results as we had with managed tables
+--   but a significant decrease in runtime when using clustered tables

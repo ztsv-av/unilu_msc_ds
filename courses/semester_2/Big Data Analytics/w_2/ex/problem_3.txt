@@ -1,0 +1,335 @@
+# General Guide to run on HPC
+
+To run our code on HPC we will need to install pyspark, to do so, we will need Micromamba (a package manager) which will help us 
+install python packages and manage environments.
+
+1. Micromamba installation
+
+Run this command
+
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+
+You will be prompted four times for choices, press enter each time as follows 
+
+Micromamba binary folder? [~/.local/bin] --> PRESS ENTER 
+Init shell (bash)? [Y/n] --> PRESS ENTER 
+Configure conda-forge? [Y/n] --> PRESS ENTER 
+Prefix location? [~/micromamba] --> PRESS ENTER 
+
+NOTE: You need to logout then login again so that the changes are taken into account
+
+2. Create our environment and activate it
+
+micromamba create --name big_data
+micromamba activate big_data
+
+3. Install necessary packages 
+
+micromamba install pyspark
+micromamba install pandas
+
+4. Copy files from local to HPC 
+
+On your local machine within the directory where you have the python and csv files stored run the following
+
+scp -P 8022 ex3_a.py ex3_b.py ex3_c.py ex3_d.py titanic.csv <your-login>@access-iris.uni.lu:~/<target-directory> 
+
+5. Run the code
+
+Finally you can run our solutions on your HPC instance by issuing the command 
+
+python ex3_a.py
+
+NOTE: similar command for each of the questions in problem 3 (a,b,c and d)
+
+6. Deactivate the environment and exit the server 
+
+micromamba deactivate
+
+exit
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+# Part - a
+
+## Solution: 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import split, avg, col
+
+spark = SparkSession.builder \
+    .appName("ex3_a") \
+    .getOrCreate()
+
+df = spark.read.csv('titanic.csv', header=True, inferSchema=True)
+
+average_age = df.select(avg("Age")).collect()[0][0]
+
+filtered_df = df.filter(df["Age"] > average_age)
+
+result_df = filtered_df.withColumn("last_name", split(col("Name"), ",")[0]) \
+    .select("last_name") \
+    .distinct()
+
+result_df.show()
+
+spark.stop()
+
+## Logic/Comments
+
+We first initialize a spark session using the SparkSession.builder from the pyspark.sql package
+We then read the titanic.csv file into a Spark RDD using the pyspark method read.csv and specify that the file has a header 
+Then using only built-in DataFrame operations (.filter(), .select(), .distinct()) we try to obtain the result from this query: 
+"Find the distinct last names of all passengers whose age is greater than the average age of
+all passengers on the Titanic"
+Finally we display our results on the console and stop the Spark session.
+
+## Output 
+
++-------------+
+|    last_name|
++-------------+
+|     Pavlovic|
+|      Markoff|
+|       Porter|
+|     Harrison|
+|     Bissette|
+|Lemberopolous|
+|      Ekstrom|
+|       Bourke|
+|     Kvillner|
+|   Goldenberg|
+|       Leader|
+|       "Homer|
+|       Newell|
+|       Graham|
+|      Compton|
+|    Goldsmith|
+| Silverthorne|
+|       Potter|
+|  Francatelli|
+|        Dimic|
++-------------+
+only showing top 20 rows
+
+## Metrics
+
+The code took: 5.47s to execute
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+# Part - b
+
+## Solution: 
+
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("ex3_b") \
+    .getOrCreate()
+
+df = spark.read.csv('titanic.csv', header=True, inferSchema=True)
+
+df.createOrReplaceTempView("titanic")
+
+result_df = spark.sql(
+    """
+    SELECT DISTINCT 
+        SPLIT(Name, ',')[0] AS last_name
+    FROM 
+        titanic 
+    WHERE
+        Age > (SELECT AVG(Age) FROM titanic)
+    """
+)
+
+result_df.show()
+
+spark.stop()
+
+## Logic/Comments
+
+We first initialize a spark session using the SparkSession.builder from the pyspark.sql package
+We then read the titanic.csv file into a Spark RDD using the pyspark method read.csv and specify that the file has a header
+After that we create (or replaces if it already exists) a temporary view of the DataFrame in the Spark SQL catalog. 
+This temporary view allows you to run SQL queries over the data represented by the DataFrame.
+We run after that the SQL query using the spark.sql() method with SQL syntax
+Finally we display our results on the console and stop the Spark session.
+
+## Output 
+
++-------------+
+|    last_name|
++-------------+
+|     Pavlovic|
+|      Markoff|
+|       Porter|
+|     Harrison|
+|     Bissette|
+|Lemberopolous|
+|      Ekstrom|
+|       Bourke|
+|     Kvillner|
+|   Goldenberg|
+|       Leader|
+|       "Homer|
+|       Newell|
+|       Graham|
+|      Compton|
+|    Goldsmith|
+| Silverthorne|
+|       Potter|
+|  Francatelli|
+|        Dimic|
++-------------+
+only showing top 20 rows
+
+## Metrics
+
+The code took: 5.46s to execute, 0.01s faster than the approach in 3.A 
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+# Part - c
+
+## Solution: 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import pandas_udf, PandasUDFType
+from pyspark.sql.types import DoubleType
+import pandas as pd
+
+@pandas_udf(DoubleType(), PandasUDFType.GROUPED_AGG)
+def AgeAverage(ages: pd.Series) -> float:
+    ages_filled = ages.fillna(23)
+    return ages_filled.mean()
+
+spark = SparkSession.builder \
+    .appName("ex3_c") \
+    .getOrCreate()
+
+spark.udf.register("AgeAverage", AgeAverage)
+
+df = spark.read.csv('titanic.csv', header=True, inferSchema=True)
+
+df.createOrReplaceTempView("titanic")
+
+avg_df = spark.sql("SELECT AgeAverage(Age) as average_age FROM titanic")
+
+avg_df.show()
+
+result_df = spark.sql(
+    """
+    SELECT DISTINCT 
+        SPLIT(Name, ',')[0] AS last_name
+    FROM 
+        titanic 
+    WHERE
+        Age > (SELECT AgeAverage(Age) FROM titanic)
+    """
+)
+
+result_df.show()
+
+spark.stop()
+
+## Logic/Comments
+
+This time we define first a user-defined function called AgeAverage using pandas_udf. 
+This function will replace null entries with 23 for the passengers’ age column using fillna() and return the average age after the replacement
+After that initialize a spark session as usual using the SparkSession.builder from the pyspark.sql package
+We proceed as in last question to read the titanic.csv file into a Spark RDD and create a temp view.
+We run after that the SQL query using the spark.sql() but leveraging our UDF in SQL command
+Finally we display our results on the console and stop the Spark session.
+
+## Output 
++------------------+                                                            
+|       average_age|
++------------------+
+|28.368316498316496|
++------------------+
+
++-------------+
+|    last_name|
++-------------+
+|     Pavlovic|
+|      Palsson|
+|      Markoff|
+|       Porter|
+|     Harrison|
+|     Bissette|
+|Lemberopolous|
+|      Ekstrom|
+|       Bourke|
+|     Kvillner|
+|   Goldenberg|
+|       Leader|
+|       "Homer|
+|       Newell|
+|       Graham|
+|      Compton|
+|    Goldsmith|
+| Silverthorne|
+|       Potter|
+|  Francatelli|
++-------------+
+
+NOTE: we notice that with this approach there is a change in the names that appear for the same query
+
+## Metrics
+
+The code took: 6.42s to execute
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+# Part - d
+
+## Solution: 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import avg
+
+spark = SparkSession.builder \
+    .appName("ex3_d") \
+    .getOrCreate()
+
+df = spark.read.csv('titanic.csv', header=True, inferSchema=True)
+
+avg_age_survived = df.filter(df['Survived'] == 1).select(avg('Age')).collect()[0][0]
+
+avg_age_not_survived = df.filter(df['Survived'] == 0).select(avg('Age')).collect()[0][0]
+
+print(f"Average age of passengers who survived: {avg_age_survived}")
+print(f"Average age of passengers who did not survive: {avg_age_not_survived}")
+
+difference = abs(avg_age_survived - avg_age_not_survived)
+print(f"Difference in average ages: {difference}")
+
+spark.stop()
+
+## Logic/Comments
+
+We first initialize a spark session using the SparkSession.builder from the pyspark.sql package
+We then read the titanic.csv file into a Spark RDD using the pyspark method read.csv and specify that the file has a header 
+We calculate the average age of passengers who survived, and calculate the average age of passengers who did not survive
+Then we calculate the absolute difference between the two age averages
+Finally we display our results on the console and stop the Spark session.
+
+## Output 
+
+Average age of passengers who survived: 28.343689655172415
+Average age of passengers who did not survive: 30.62617924528302
+Difference in average ages: 2.282489590110604
+
+## Comments
+
+The average age of passengers who survived was 2.28 years younger than those who died.
+This is not a huge age gap that would allow us to draw a conclusion such as "the younger you are the more chances you had to survive" 
+
+## Metrics
+
+The code took: 4.39s to execute

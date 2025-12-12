@@ -1,0 +1,48 @@
+# IRIS
+
+# copy
+scp -P 8022 problem_2.sh azaitsev@access-iris.uni.lu:~/
+
+# login
+ssh -p 8022 azaitev@access-iris.uni.lu
+
+# computational node:
+srun -p interactive --pty bash -i
+
+# exporting environment settings for Java:
+module load lang/Java/1.8.0_241
+export JAVA_HOME=/opt/apps/resif/iris-rhel8/2020b/broadwell/software/Java/1.8.0_241/
+
+# exporting environment settings for Hadoop:
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+
+# increasing the Java heap space for Hadoop:
+export HADOOP_CLIENT_OPTS=" -Xmx1024m"
+
+# exporting environment settings for Hive:
+export HIVE_HOME=~/apache-hive-3.1.3-bin
+export PATH=~/hadoop-3.3.4/bin:~/apache-hive-3.1.3-bin/bin:$PATH
+
+# compiling the (example) WordCount.java file and put the class file into a Jar file called WordCount.jar:
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar *.java
+jar -cvf WordCount.jar *.class
+
+# exporting Spark:
+export SPARK_HOME=~/spark-3.2.1-bin-hadoop2.7
+export PATH=~/spark-3.2.1-bin-hadoop2.7/bin:$PATH
+
+# LOCAL
+
+export JAVA_HOME=/usr/lib/jvm/default-java
+export HADOOP_HOME=~/hadoop-3.3.4
+export PATH=~/hadoop-3.3.4/bin:$PATH
+export SCALA_HOME=~/scala-2.13.0
+export SPARK_HOME=~/spark-3.3.4-bin-hadoop3-scala2.13
+export PATH=~/spark-3.3.4-bin-hadoop3-scala2.13/bin:$PATH
+
+javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-3.3.4.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-3.3.4.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-logging-1.1.3.jar HadoopWordCounta12.java
+jar -cvf HadoopWordCounta12.jar *.class
+
+hadoop jar HadoopWordCounta12.jar HadoopWordCounta12 wiki_articles/AA/ ~/hadoop-output
+hadoop jar HadoopWordCountb1.jar HadoopWordCountb1 ~/enwiki-articles/AA/ ~/enwiki-articles/AB/ ~/enwiki-articles/AC/ ~/enwiki-articles/AD/ ~/enwiki-articles/AE/ ~/enwiki-articles/AF/ ~/enwiki-articles/AG/ ~/enwiki-articles/AH/ ~/enwiki-articles/AI/ ~/enwiki-articles/AJ/ ~/enwiki-articles/AK/ ~/hadoop-output-b1-all

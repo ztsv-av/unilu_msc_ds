@@ -1,0 +1,29 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# DATA
+courses/semester_1/SQL and Cloud Computing/hw_1/data/*
+courses/semester_1/SQL and Cloud Computing/hw_2/data/*
+courses/semester_1/SQL and Cloud Computing/hw_3/data/*
+courses/semester_1/SQL and Cloud Computing/exam/*
+courses/semester_1/Programming with R and Python/exam/*
+courses/semester_2/Deep Learning/.venv/*
+courses/semester_2/Machine Learning Methods and Data Mining/w_8/data/*
+courses/semester_2/Machine Learning Methods and Data Mining/w_8/logs/*
+courses/semester_2/Machine Learning Methods and Data Mining/w_8/training_checkpoints_*/*
+courses/semester_2/Big Data Analytics/w_2/3_WordCount2/3_WordCount2/AA/*
+courses/semester_2/Big Data Analytics/w_3/ex/data/*
+courses/semester_3/Reproducible Pipelines and Timeseries/data/*
+courses/semester_3/Environmental Data Analytics/data/*
+courses/semester_3/Environmental Data Analytics/project_1/data/*.nc
+courses/semester_3/Applied ML/2/project/data/*
+courses/semester_3/ImagingAI/6/data/*
+courses/semester_3/ImagingAI/7/data/*
+courses/semester_3/ImagingAI/7/images/*
+courses/semester_3/ImagingAI/8/data/*
+courses/semester_3/ImagingAI/final/data/*
+courses/semester_3/Complex Networks/11/Graph-ViT-MLPMixer/*
+courses/semester_4/data/*
+__pycache__/

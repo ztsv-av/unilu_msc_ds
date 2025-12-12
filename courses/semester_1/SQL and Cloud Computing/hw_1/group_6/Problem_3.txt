@@ -1,0 +1,149 @@
+-- Problem 3 (a)
+-- select the most popular directors based on how many movies they directed
+-- stop after the top 25 directors with the most movie
+-- and select only those directors who are not in StarsIn
+
+-- we first select each director from Director and count how many movies they have directed using the Directs table 
+-- we then sort the directors based on how many movies they have directed in descending order
+-- finally we limit our results to the top 25
+-- runtime: <1s
+SELECT 
+	d1.nid,
+    d1.name,
+    COUNT(d2.nid) AS moviesDirected
+FROM
+    Director AS d1
+JOIN
+    Directs AS d2
+ON 
+    d1.nid = d2.nid 
+WHERE
+    d1.nid NOT IN (SELECT nid FROM StarsIn)
+GROUP BY
+	d1.nid, d1.name
+ORDER BY 
+    moviesDirected DESC 
+LIMIT 
+    25;
+
+-- Problem 3 (b)
+-- select the top 25 pairs of actors that occur together in a same movie
+-- ordered by the number of movies in which they co-occur
+
+-- here we perform a self join of the StarsIn table on the title id of the movie
+-- which will give us pairs of actors that have co-starred in a movie
+-- we also join the Actor table to obtain the names of the actors
+-- finally we aggregate the count of movies in which pairs of actors have costarred 
+-- as seen above we sort and take the top 25 rows again
+-- runtime: <1s
+SELECT
+    s1.nid,
+    a1.name,
+    s2.nid,
+    a2.name,
+    COUNT(*) costarringCount
+FROM 
+    StarsIn AS s1
+JOIN
+    StarsIn AS s2
+ON 
+    s1.tid = s2.tid
+JOIN 
+    Actor AS a1
+ON 
+    s1.nid = a1.nid
+JOIN 
+    Actor AS a2
+ON
+    s2.nid = a2.nid
+WHERE
+    s1.nid < s2.nid
+GROUP BY
+    1, 2, 3, 4
+ORDER BY
+    costarringCount DESC 
+LIMIT 
+    25;
+
+-- Problem 3 (c)
+-- find frequent 2-itemsets of actors or directors who occurred together in at least 4 movies
+
+-- create an intermediate view where we have the actors and directors with their names using UNION and which we will for convenience call ArtistNames to refer to both actor and director
+-- runtime: <1s
+CREATE OR REPLACE VIEW ArtistNames AS (
+    SELECT nid, name
+    FROM Actor 
+    UNION
+    SELECT nid, name
+    FROM Director
+);
+
+-- create an intermediate view where we have the actors and the movies they starred in + directors and the movies they directed using the UNION
+-- runtime: <1s
+CREATE OR REPLACE VIEW Artist AS (
+    SELECT tid, nid
+    FROM StarsIn 
+    UNION
+    SELECT tid, nid
+    FROM Directs
+);
+
+-- here we check for frequent combinations of Movie, Actor/Director pairs
+-- runtime: <1s
+CREATE OR REPLACE VIEW Artist1 AS (
+    SELECT tid, nid
+    FROM Artist s 
+    WHERE EXISTS (
+        SELECT nid 
+        FROM Artist s1 
+        WHERE s1.nid = s.nid 
+        GROUP BY s1.nid 
+        HAVING COUNT(s1.tid)>=4)
+    );
+SELECT * FROM Artist1;
+
+-- finally we find the frequent combinations of 2-itemsets of artists using the A-Priori algorithm and joining with the ArtistNames table to obtain the names of the Actors and Directors 
+-- runtime: 1s
+SELECT a1.name AS artist_name_1, a2.name AS artist_name_2
+FROM Artist1 s1, Artist1 s2, ArtistNames a1, ArtistNames a2
+WHERE s1.tid = s2.tid 
+AND s1.nid < s2.nid
+AND s1.nid = a1.nid 
+AND s2.nid = a2.nid
+GROUP BY a1.name, a2.name
+HAVING COUNT(s1.tid)>=4; 
+
+-- Problem 3 (d)
+-- find frequent 3-itemsets of actors or directors who occurred together in at least 4 movies
+
+-- here we check for frequent combinations of Movie, Actor/Director 3-itemsets
+-- runtime: <1s
+CREATE OR REPLACE VIEW Artist2 AS (
+    SELECT s1.tid, s1.nid nid1, s2.nid AS nid2
+    FROM Artist1 s1, Artist1 s2
+    WHERE s1.tid = s2.tid 
+    AND s1.nid < s2.nid
+    AND EXISTS (
+        SELECT s3.nid, s4.nid
+        FROM Artist1 s3, Artist1 s4
+        WHERE s3.tid = s4.tid 
+            AND s1.nid = s3.nid
+            AND s2.nid = s4.nid
+            AND s3.nid < s4.nid
+        GROUP BY  s3.nid, s4.nid
+        HAVING COUNT(s3.tid)>=4
+    )
+  );
+
+-- finally we find the frequent combinations of 3-itemsets of artists using the A-Priori algorithm and joining with the ArtistNames table to obtain the names of the Actors and Directors 
+-- runtime: 11s
+SELECT a1.name AS artist_name_1, a2.name AS artist_name_2, a3.name AS artist_name_3
+FROM Artist2 s1, Artist2 s2, ArtistNames a1, ArtistNames a2, ArtistNames a3
+WHERE s1.tid = s2.tid
+    AND s1.nid1 = s2.nid1 
+    AND s1.nid2 < s2.nid2
+    AND s1.nid1 = a1.nid 
+    AND s1.nid2 = a2.nid
+    AND s2.nid2 = a3.nid
+GROUP BY a1.name, a2.name, a3.name
+HAVING COUNT(s1.tid)>=4;

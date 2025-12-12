@@ -1,0 +1,102 @@
+area_layer_name_it:
+
+1)
+Precision: 1.0
+Recall: 1.0 
+
+2)
+Precision
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+Recall
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+-------------------
+
+period_layer_name_it:
+
+1)
+Precision: 1.0
+Recall: 1.0 
+
+2)
+Precision
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+Recall
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+-------------------
+
+customer_class_id:
+
+1)
+Precision: 1.0
+Recall: 1.0 
+
+2)
+Precision
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+Recall
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+-------------------
+
+visitor_class_id:
+
+1)
+Precision: 1.0
+Recall: 1.0 
+
+2)
+Precision
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+Recall
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+-------------------
+
+detailed_visitor_class_id:
+
+1)
+Precision: 1.0
+Recall: 1.0 
+
+2)
+Precision
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 
+
+Recall
+Min:  1.0
+Max:  1.0
+Avg:  1.0
+Std:  0.0 

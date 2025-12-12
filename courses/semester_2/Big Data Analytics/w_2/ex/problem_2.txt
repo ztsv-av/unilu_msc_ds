@@ -1,0 +1,328 @@
+a)
+The first python file (SparkWordCount.py) filters in a way such that only words of length 5-25 are kept and analysed for the MapReduce. Furthermore, the tasks (1), (2) & (3) are all dealt with in the main function. Here is the code of the python file:
+
+from pyspark import SparkContext
+import re
+
+def preprocess_line(line):
+    words = re.findall(r'\b[a-z]{5,25}\b', line.lower())
+    return words
+
+def main():
+    sc = SparkContext(appName="SparkWordCount")
+    text_file = sc.textFile("enwiki-articles/AA/*")
+
+    filtered_words_count = text_file.flatMap(preprocess_line) \
+                              .map(lambda word: (word, 1)) \
+                              .reduceByKey(lambda a, b: a + b) \
+                              .filter(lambda pair: pair[1] >= 1000)
+    
+    filtered_words_broadcast = sc.broadcast(set(filtered_words_count.map(lambda pair: pair[0]).collect()))
+
+    word_pairs_count = text_file.flatMap(lambda line: [
+        ((min(word, next_word), max(word, next_word)), 1)
+        for word, next_word in zip(preprocess_line(line), preprocess_line(line)[1:])
+        if word in filtered_words_broadcast.value and next_word in filtered_words_broadcast.value
+    ]) \
+    .reduceByKey(lambda a, b: a + b) \
+    .filter(lambda pair: pair[1] == 1000)
+    
+    top_100_words = filtered_words_count.sortBy(lambda pair: pair[1], ascending=False).take(100)
+
+
+    print("Individual words with a count of exactly 1000:")
+    for word, count in filtered_words_count.filter(lambda pair: pair[1] == 1000).collect():
+        print(word, count)
+
+    print("\nWord pairs with a count of exactly 1000:")
+    for pair, count in word_pairs_count.collect():
+        print(f"{pair[0]} {pair[1]}", count)
+
+    print("\nTop-100 most frequent individual words:")
+    for word, count in top_100_words:
+        print(word, count)
+                   
+
+if __name__ == "__main__":
+    main()
+
+The second python file (SparkWordCount2.py) filters in a way such that only words of length 5-25 and numbers of length 2-12 are kept and analysed for the MapReduce. Furthermore, the task (4) is dealt with in the main function. Here is the code of the python file: 
+
+from pyspark import SparkContext
+import re
+
+def preprocess_line(line):
+    tokens = re.findall(r'\b(?:\d{2,12}|\b[a-z]{5,25})\b', line.lower())
+    return tokens
+
+def generate_number_word_pairs(line):
+    tokens = preprocess_line(line)
+    pairs = []
+    for i in range(len(tokens) - 1):
+        first_token, second_token = min(tokens[i], tokens[i+1]), max(tokens[i], tokens[i+1])
+        if re.match(r'\b\d{2,12}\b', first_token) and re.match(r'\b[a-z]{5,25}\b', second_token):
+            pairs.append(((first_token, second_token), 1))
+    return pairs
+
+def main():
+    sc = SparkContext(appName="SparkWordCount2")
+    text_file = sc.textFile("enwiki-articles/AA/*")
+
+    number_word_pairs = text_file.flatMap(generate_number_word_pairs) \
+                                 .reduceByKey(lambda a, b: a + b) \
+                                 .sortBy(lambda pair: pair[1], ascending=False) \
+                                 .take(100)
+
+
+    print("Top-100 most frequent number-word pairs:")
+    for pair, count in number_word_pairs:
+        print(f"{pair[0]} {pair[1]}", count)
+
+
+if __name__ == "__main__":
+    main()
+
+b)
+Individual words with a count of exactly 1000 (word count):
+philosophy 1000
+
+Word pairs with a count of exactly 1000 (word1 word2 count):
+
+Top-100 most frequent individual words (word count):
+which 30269
+their 17895
+other 16702
+first 15715
+after 12281
+there 11310
+these 10631
+during 9595
+between 9482
+would 9117
+world 8326
+known 7777
+years 7662
+about 7618
+while 7602
+however 7548
+century 6950
+called 6866
+where 6705
+number 6628
+states 6566
+three 6457
+later 6454
+being 6356
+early 6298
+through 6243
+state 6236
+including 6185
+since 6119
+system 5987
+under 5987
+became 5732
+united 5726
+often 5674
+people 5585
+government 5536
+american 5520
+because 5449
+several 5196
+before 4910
+although 4804
+british 4784
+national 4738
+found 4730
+second 4698
+example 4685
+large 4653
+could 4651
+against 4552
+based 4527
+south 4508
+title 4348
+until 4344
+north 4287
+include 4260
+country 4235
+major 4234
+common 4175
+history 4157
+those 4083
+modern 4052
+different 3979
+church 3978
+language 3941
+around 3937
+following 3900
+general 3858
+another 3833
+group 3815
+according 3757
+among 3749
+within 3697
+population 3688
+english 3608
+series 3528
+using 3513
+small 3455
+french 3400
+period 3398
+began 3383
+still 3362
+power 3357
+water 3333
+public 3322
+great 3312
+international 3307
+black 3226
+death 3221
+university 3164
+million 3157
+music 3137
+point 3101
+important 3092
+order 3088
+wikipedia 3051
+https 3042
+curid 3030
+usually 3019
+though 2962
+development 2957
+
+Top-100 most frequent number-word pairs (number word count):
+000 people 293
+000 years 221
+10 about 152
+11 september 150
+000 about 120
+20 years 111
+10 years 108
+20 about 97
+18 under 94
+30 years 94
+10 million 92
+2010 census 91
+31 december 84
+65 years 79
+30 about 77
+50 about 75
+24 hours 75
+100 years 75
+2600 atari 74
+2011 census 72
+100 about 70
+50 years 70
+11 apollo 69
+15 years 68
+40 years 66
+100 million 64
+25 years 63
+500 about 62
+20 million 61
+13 apollo 60
+40 about 60
+25 december 58
+2000 since 58
+11 attacks 57
+25 million 57
+12 years 55
+200 about 54
+2011 january 53
+2002 since 52
+000 troops 52
+15 about 52
+2010 october 51
+000 soldiers 51
+2015 january 51
+25 about 51
+2007 january 51
+2011 december 50
+000 inhabitants 50
+18 years 50
+000 members 49
+100 billboard 49
+2013 march 49
+15 million 48
+000 around 48
+31 october 48
+2008 december 48
+10 december 48
+10 percent 48
+15 between 47
+500 amiga 47
+2013 january 47
+15 apollo 47
+17 apollo 47
+25 march 47
+2007 november 46
+31 march 46
+2009 september 46
+2012 march 46
+15 september 46
+2001 census 45
+2014 january 45
+16 apollo 45
+2014 october 45
+2001 since 45
+2009 march 45
+2012 december 45
+2014 december 44
+000 copies 44
+50 percent 44
+2008 october 44
+2010 according 44
+200 billboard 44
+70 about 44
+30 million 44
+2011 march 43
+2007 april 43
+2014 november 43
+19 august 43
+2015 september 43
+10 april 43
+17 april 42
+2013 december 42
+15 november 42
+2012 november 42
+2003 since 42
+2000 census 42
+60 about 41
+2006 january 41
+2014 september 41
+15 january 41
+
+c)
+Runtime by subdirectory:
+SparkWordCount.py:
+- AA: 						0m55.107s
+- AA, AB:					1m34.753s
+- AA, AB, AC:					1m45.802s
+- AA, AB, AC, AD:				2m23.157s
+- AA, AB, AC, AD, AE:				2m54.190s
+- AA, AB, AC, AD, AE, AF:			3m31.718s
+- AA, AB, AC, AD, AE, AF, AG:			4m22.474s
+- AA, AB, AC, AD, AE, AF, AG, AH:		4m58.884s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI:		5m33.924s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ:	6m22.246s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ, AK:	6m39.463s
+
+SparkWordCount2.py:
+- AA: 						0m29.703s	
+- AA, AB:					0m52.830s
+- AA, AB, AC:					0m54.851s
+- AA, AB, AC, AD:				1m14.180s
+- AA, AB, AC, AD, AE:				1m25.840s
+- AA, AB, AC, AD, AE, AF:			1m43.277s
+- AA, AB, AC, AD, AE, AF, AG:			1m57.456s
+- AA, AB, AC, AD, AE, AF, AG, AH:		2m17.879s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI:		2m53.278s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ:	2m58.745s
+- AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ, AK:	3m30.766s
+
+Hardware setup:
+- Processor: Intel(R) Core(TM) i5-1035G7 CPU @ 1.20GHz   1.50 GHz
+- Installed RAM: 8.00 GB (7.60 GB usable)
+
+Conclusion:
+By plotting this data, one can observe that the execution time grows linearly with respect to the number of subdirectories considered as input for both python files. Therefore, we can conclude that we have a form of linear scalability.
