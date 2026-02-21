@@ -83,5 +83,5 @@ If you are currently enrolled in a similar program or course, do not submit this
 ## AUTHOR
 
 Anton Zaitsev  
-Graduate in Data Science '25
+Graduate in Data Science '25  
 University of Luxembourg
