@@ -6,9 +6,9 @@
 
 This repository contains my academic work from the Master of Science in Data Science program at the University of Luxembourg.
 
-The repository includes coursework, assignments, projects, practical exercises, and thesis-related materials completed throughout the program. All content is organized by semester and topic to reflect the structure of the degree.
+The repository includes coursework, assignments, projects, practical exercises, and thesis-related materials completed throughout the program. All content is organized by semester and topic.
 
-The purpose of making this repository public is transparency and knowledge sharing. It documents my academic progression and applied work in data science, statistics, machine learning, and related fields.
+The purpose of making this repository public is transparency and knowledge sharing. It documents my academic progression and applied work in data science, statistics, machine learning, etc.
 
 ## Content Overview
 
@@ -23,11 +23,11 @@ courses/
 
 Each semester directory contains course-specific folders with materials such as:
 
-- Assignments and solutions
-- Projects and reports
-- Code implementations
-- Notes and experiments
-- Supporting scripts and utilities
+- Assignments and solutions.
+- Projects and reports.
+- Code implementations.
+- Notes and experiments.
+- Supporting scripts and utilities.
 
 ## Coursework by Semester
 
@@ -70,21 +70,15 @@ Includes reserach paper idea (ensemble meta optimizer) and notes taken before/du
 
 The `thesis/` directory contains master’s thesis materials, including:
 
-- Final thesis document
-- Thesis presentation slides
-- Presentation notes
-
-The `pandoc/` directory contains configuration files and scripts used for document generation and formatting related to reports or thesis preparation.
+- Final thesis document.
+- Thesis presentation slides.
+- Presentation notes.
 
 ## DISCLAIMER
 
 This repository represents completed academic work from my time as a graduate student. It is shared for educational and reference purposes only.
 
 If you are currently enrolled in a similar program or course, do not submit this work as your own. Use it only as a learning reference.
-
-## LICENSE
-
-Unless otherwise stated, this repository is shared for personal learning and educational review. No warranty is provided.
 
 ## AUTHOR
 
